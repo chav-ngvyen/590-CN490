@@ -3,37 +3,198 @@ import json
 import matplotlib
 import matplotlib.pyplot as plt
 
-
+###################################
+model_type = 'linear'
+# model_type = 'logistic'
+NFIT = 1
+OPT_ALGO = 'Nelder-Mead'
+test_size = 0.2
+###################################
 with open('/home/chau/590-CODES/DATA/weight.json') as f:
     data = json.load(f)
-    print(type(data))
-    print(dir(data))
-    #print(data.items)
-    #print(data.keys())
+    # print(type(data))
+    # print(dir(data))
+    # print(data.items())
+    # print(data.keys())
 
-
+# exit()
+from sklearn.model_selection import train_test_split
 class Data():
     def __init__(self, attributions):
-        self.is_adult = attributions['is_adult']     
+        self.is_adult = attributions['is_adult']   
+        # x is age  
         self.age = attributions['x']    
-        self.wage= attributions['y']
+        # y is weight
+        self.weight= attributions['y']
+    
+# Linear regression adapted from this https://towardsdatascience.com/linear-regression-from-scratch-cd0dee067f72
+def params(x, p):
+    x_mean = np.mean(x)
+    p_mean = np.mean(p)
+
+    cov_x_p = 0
+    var_x = 0 
+
+    for i in range(len(x)):
+        cov_x_p += (x[i] - x_mean)*(p[i] - p_mean)
+        var_x += (x[i] - x_mean)**2
+    
+    #m is slope
+    m = cov_x_p / var_x
+    #b is bias
+    b = p_mean - (m*x_mean)
+
+    return [m, b]
+
+def split(input_array):
+    global test_size 
+    size = test_size
+    train, test = train_test_split(input_array, test_size = size, random_state = 42)
+    return np.asarray(train), np.asarray(test)
+
+# exit()    
+
+def normalize(original_array):
+    normalized_array = (original_array - np.mean(original_array)) / np.std(original_array)
+    return normalized_array
+
+def reverse_normalize(original_array,normalized_array):
+    reversed_array = np.std(original_array)*normalized_array + np.mean(original_array)
+    return reversed_array    
 
 
+#############################################################
+## Used this to test normalize & reverse normalize functions
+# X_train = np.array([ 1,2,3,4,5,6,7,8])
+# print(normalize(X_train))
+# print(reverse_normalize(X_train, normalize(X_train)))
+# from sklearn.preprocessing import StandardScaler
+# scaler = StandardScaler()
+# X_transformed = scaler.fit_transform(X_train[:, np.newaxis])
+# print(X_transformed)
+# print(scaler.inverse_transform(X_transformed))
+# exit()    
 
-# class Data():
-#     def __init__(self):
-#         with open(self) as f:
-#             return json.load(f)    
+def model(x, p):
+    global model_type
+    m, b = params(x, p)
+    if model_type == "linear":
+        y_pred = b + np.multiply(m, x) 
+    if model_type == "logistic":
+        pass 
+    return y_pred
 
+# Loss function to optimize (minimize)
+def loss(p):
+    global y_predict
+    loss = np.zeros_like(y_predict)
+    ### https://www.kdnuggets.com/2019/03/neural-networks-numpy-absolute-beginners-part-2-linear-regression.html/2
+    loss = 1/2 * np.mean((y_predict - p)**2)
+    return loss
 
+## From https://www.askpython.com/python/examples/linear-regression-from-scratch
+class LinearRegression:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.m = 0
+        self.b = 0
+        self.n = len(x)
+    
+    def fit(self , epochs , lr):
+        ## epoch is number of iterations
+        ## l is learning rate
+        
+        ##Implementing Gradient Descent
+        for i in range(epochs):
+            y_pred = self.m * self.x + self.b
+             
+            #Calculating derivatives w.r.t Parameters
+            D_m = (-2/self.n)*sum(self.x * (self.y - y_pred))
+            D_b = (-1/self.n)*sum(self.x-y_pred)
+             
+            #Updating Parameters
+            self.m = self.m - lr * D_m
+            self.b = self.b - lr * D_b
+             
+    def predict(self , input):
+        y_pred = self.m * input + self.b 
+        return y_pred
+    
+# exit()    
+#################################
 my_data = Data(data)
-print(np.average(my_data.age))
+
+# exit()
+x_train, x_test = split(my_data.age)
+y_train, y_test = split(my_data.weight)
+
+x_train_norm, x_test_norm = normalize(x_train), normalize(x_test[x_test<18])
+y_train_norm, y_test_norm = normalize(y_train), normalize(y_test)
+
+regressor = LinearRegression(x_train_norm, y_train_norm)
+
+regressor.fit(1000,0.01)
+# print(regressor)
+y_pred_norm = regressor.predict(x_test_norm)
+
+# exit()
+# y_predict_norm = model(x_train_norm, y_train_norm)
+y_pred = reverse_normalize(y_train, y_pred_norm)
 
 
-def linear_reg(x, p):
-    # m is slope (rise/ run)
-    m = np.sum((x-np.average(x))*(p-np.average(p)))
-    # b is constant
-    return m
+############################
+# Plot
+fig, ax = plt.subplots()
+# ax.plot(x_train_norm, y_train_norm, 'o', label = "Training set")
+# ax.plot(x_test_norm, y_pred_norm, 'x', label = 'Predict')
+ax.plot(x_train, y_train, 'o', label = "Training set")
+ax.plot(x_test[x_test<18], y_pred, 'x', label = 'Predict')
 
-print(linear_reg(my_data.age, my_data.wage))
+plt.show()
+exit()
+# print(linear_reg(my_data.age, my_data.weight))
+
+
+#################################
+from scipy.optimize import minimize
+
+po=np.random.uniform(0.5,1., size = NFIT)
+print(type(po))
+print(po)
+res = minimize(loss, po, method=OPT_ALGO, tol=1e-15)
+popt = res.x
+print("OPTIMAL PARAM:",popt)
+
+exit()
+# #######
+# Compare to linear regression from sklearn
+from sklearn.linear_model import LinearRegression
+reg = LinearRegression().fit(np.asarray(my_data.age).reshape(-1,1), np.asarray(my_data.weight))
+
+print(reg.intercept_)
+print(reg.coef_)
+
+#exit()
+#######
+
+# def logistic_reg(x, p):
+#     x_mean = np.mean(x)
+#     p_mean = np.mean(p)
+
+#     cov_x_p = 0
+#     var_x = 0 
+
+#     for i in range(len(x)):
+#         cov_x_p += (x[i] - x_mean)*(p[i] - p_mean)
+#         var_x += (x[i] - x_mean)**2
+    
+#     #m is slope
+#     m = cov_x_p / var_x
+#     #b is bias
+#     b = p_mean - (m*x_mean)
+
+#     # predicted value of p
+#     p_pred = p[0]+p[1]*(1.0/(1.0+np.exp(-(x-p[2])/(p[3]+0.00001))))
+#     return p_pred
+
