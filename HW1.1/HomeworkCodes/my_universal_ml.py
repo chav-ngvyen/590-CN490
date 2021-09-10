@@ -53,7 +53,27 @@ def split(input_array):
     return np.asarray(train), np.asarray(test)
 
 # exit()    
+class my_array():
+    def __init__(self, input):
+        self.input = input
+        self.mean = np.mean(input)
+        self.std = np.std(input)
 
+    def normalize(self):
+        return (self.input - self.mean) / self.std
+
+    def inverse(self):
+        return self.std*self.normalize() + self.mean
+arr = my_array([1,2,3,4,5,6,7,8])
+print(dir(arr))
+
+print(arr.mean)
+print(arr.std)
+
+print(arr.normalize())
+print(arr.inverse())
+# print(arr.normalize())
+exit()       
 def normalize(original_array):
     normalized_array = (original_array - np.mean(original_array)) / np.std(original_array)
     return normalized_array
@@ -64,16 +84,16 @@ def reverse_normalize(original_array,normalized_array):
 
 
 #############################################################
-## Used this to test normalize & reverse normalize functions
-# X_train = np.array([ 1,2,3,4,5,6,7,8])
+# Used this to test normalize & reverse normalize functions
+X_train = np.array([ 1,2,3,4,5,6,7,8])
 # print(normalize(X_train))
 # print(reverse_normalize(X_train, normalize(X_train)))
-# from sklearn.preprocessing import StandardScaler
-# scaler = StandardScaler()
-# X_transformed = scaler.fit_transform(X_train[:, np.newaxis])
-# print(X_transformed)
-# print(scaler.inverse_transform(X_transformed))
-# exit()    
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_transformed = scaler.fit_transform(X_train[:, np.newaxis])
+print(X_transformed)
+print(scaler.inverse_transform(X_transformed))
+exit()    
 
 def model(x, p):
     global model_type
@@ -129,7 +149,7 @@ my_data = Data(data)
 x_train, x_test = split(my_data.age)
 y_train, y_test = split(my_data.weight)
 
-x_train_norm, x_test_norm = normalize(x_train), normalize(x_test[x_test<18])
+x_train_norm, x_test_norm = normalize(x_train), normalize(x_test)
 y_train_norm, y_test_norm = normalize(y_train), normalize(y_test)
 
 regressor = LinearRegression(x_train_norm, y_train_norm)
@@ -149,7 +169,7 @@ fig, ax = plt.subplots()
 # ax.plot(x_train_norm, y_train_norm, 'o', label = "Training set")
 # ax.plot(x_test_norm, y_pred_norm, 'x', label = 'Predict')
 ax.plot(x_train, y_train, 'o', label = "Training set")
-ax.plot(x_test[x_test<18], y_pred, 'x', label = 'Predict')
+ax.plot(x_test, y_pred, 'x', label = 'Predict')
 
 plt.show()
 exit()
