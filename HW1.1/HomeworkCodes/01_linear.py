@@ -17,11 +17,20 @@ with open('/home/chau/590-CODES/DATA/weight.json') as f:
 ###############################
 class Data():
     def __init__(self, attributions):
-        self.is_adult = attributions['is_adult']   
+        self.is_adult = np.array(attributions['is_adult'])  
         # x is age  
-        self.age = attributions['x']    
+        self.age = np.array(attributions['x'] )   
         # y is weight
-        self.weight= attributions['y']
+        self.weight= np.array(attributions['y'])
+        
+    
+
+my_data = Data(data)
+print(type(my_data.is_adult))
+
+# not_adult = [val for val in my_data if my_data['is_adult'] == 0]
+# print(not_adult)
+# print(len(not_adult))
 
 ################################
 # Linear regression adapted from this https://towardsdatascience.com/linear-regression-from-scratch-cd0dee067f72
@@ -51,7 +60,7 @@ def split(input_array):
 
 def normalize(original_array):
     normalized_array = (original_array - np.mean(original_array)) / np.std(original_array)
-    return normalized_array, np.mean(original_array), np.std(original_array)
+    return normalized_array
 
 def reverse_normalize(normalized_array, original_mean, original_std):
     reversed_array = original_std *normalized_array + original_mean
@@ -64,15 +73,18 @@ def my_predict(test_set,m,b):
 ################################
 # Initialize
 my_data = Data(data)
-
+print(my_data)
+my_data = my_data[my_data.age<18]
 # Train test split
 x_train, x_test = split(my_data.age)
+
 y_train, y_test = split(my_data.weight)
 
 # Normalize
-x_train_norm, x_train_mean, x_train_std = normalize(x_train)
-x_test_norm, x_test_mean, x_test_std = normalize(x_test)
-y_train_norm, y_train_mean, y_train_std = normalize(y_train)
+x_train_norm = normalize(x_train)
+x_test_norm = normalize(x_test)
+# x_test_norm = normalize(x_test[x_test<18])
+y_train_norm = normalize(y_train)
 
 # Make predictions
 m, b = params(x_train_norm, y_train_norm)
@@ -81,15 +93,18 @@ y_pred_norm = my_predict(x_test_norm, m, b)
 # Rescale
 y_pred = reverse_normalize(y_pred_norm, np.mean(y_train), np.std(y_train) )
 
+print(m)
+print(b)
 ##################################
 # Plot
 # Plot
 fig, ax = plt.subplots()
-# ax.plot(x_train_norm, y_train_norm, 'o', label = "Training set")
-# ax.plot(x_test_norm, y_pred_norm, 'x', label = 'Predict')
-# ax.plot(x_train, y_train, 'o', label = "Training set")
-ax.plot(x_test, y_test, 'o')
+# m_test, b_test = np.polyfit(x_train[x_train<18], y_train,1)
+# plt.plot(x_train, m*x_train + b)
+# ax.plot(x_test, y_test, 'o')
 ax.plot(x_train, y_train, '.')
-ax.plot(x_test, y_pred, 'x', label = "Predict")
+xe = np.linspace(0,18,100)
+ye = xe*m + b
+ax.plot(xe,ye)
 plt.show()
 exit()
