@@ -207,8 +207,9 @@ print(my_y_scaled)
 # print(y_train_std)
 
 # exit()
-y_reverse = reverse_normalize(my_y_scaled, y_train_mean, y_train_std)
-
+# y_reverse = reverse_normalize(my_y_scaled, np.mean(my_data.weight), np.std(my_data.weight))
+y_reverse = reverse_normalize(my_y_scaled, np.mean(y_train), np.std(y_train))
+y_reverse2 = reverse_normalize(my_y_scaled, np.mean(my_data.weight), np.std(my_data.weight))
 # print(y_reverse)
 # exit()
 # exit()
@@ -216,16 +217,28 @@ y_reverse = reverse_normalize(my_y_scaled, y_train_mean, y_train_std)
 ###################################
 from sklearn.preprocessing import StandardScaler
 
-scaler = StandardScaler()
+scalex = StandardScaler().fit(x_train.reshape(-1,1))
+scaley = StandardScaler().fit(y_train.reshape(-1,1))
 
-x_scaled = scaler.fit_transform(x_train.reshape(-1,1))
+x_train_scaled = scalex.transform(x_train.reshape(-1,1))
 # print(x_scaled)
-y_scaled = scaler.fit_transform(y_train.reshape(-1,1))
+y_train_scaled = scaley.transform(y_train.reshape(-1,1))
 # print(y_scaled)
-reg = LinearRegression().fit(x_scaled, y_scaled)
-# print(reg.coef_)
-# print(reg.intercept_)
+x_test_scaled = scalex.transform(x_test.reshape(-1,1))
+y_test_scaled = scaley.transform(y_test.reshape(-1,1))
 
+reg = LinearRegression().fit(x_train_scaled, y_train_scaled)
+print(reg.coef_)
+print(reg.intercept_)
+
+y_pred_scaled_sk = reg.predict(x_test_scaled)
+print(y_pred_scaled_sk)
+
+y_pred_unscale = scaley.inverse_transform(y_pred_scaled_sk)
+print(y_pred_unscale)
+print(y_reverse)
+print(y_reverse2)
+exit()
 print("what")
 y_pred_scaled = reg.predict(scaler.fit_transform(x_test.reshape(-1,1)))
 print(y_pred_scaled)
