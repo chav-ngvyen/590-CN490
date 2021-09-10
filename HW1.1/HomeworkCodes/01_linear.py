@@ -3,6 +3,8 @@ import json
 import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from scipy.optimize import minimize
+
 
 ###################################
 model_type = 'linear'
@@ -22,15 +24,6 @@ class Data():
         self.age = np.array(attributions['x'] )   
         # y is weight
         self.weight= np.array(attributions['y'])
-        
-    
-
-my_data = Data(data)
-print(type(my_data.is_adult))
-
-# not_adult = [val for val in my_data if my_data['is_adult'] == 0]
-# print(not_adult)
-# print(len(not_adult))
 
 ################################
 # Linear regression adapted from this https://towardsdatascience.com/linear-regression-from-scratch-cd0dee067f72
@@ -58,32 +51,43 @@ def split(input_array):
     train, test = train_test_split(input_array, test_size = size, random_state = 42)
     return np.asarray(train), np.asarray(test)
 
+# Normalize function
 def normalize(original_array):
     normalized_array = (original_array - np.mean(original_array)) / np.std(original_array)
     return normalized_array
 
+# Reverse scaling
 def reverse_normalize(normalized_array, original_mean, original_std):
     reversed_array = original_std *normalized_array + original_mean
     return reversed_array 
 
+# Linear prediction
 def my_predict(test_set,m,b):
-    y_pred = b + m * test_set
+    if model_type == "linear":
+        y_pred = b + m * test_set   
+    if model_type == "logistic":
+        pass
     return(y_pred)
 
+# Loss function
+
+def loss(p):
+    global y_predict
+    loss = np.zeros_like(y_predict)
+    ### https://www.kdnuggets.com/2019/03/neural-networks-numpy-absolute-beginners-part-2-linear-regression.html/2
+    loss = 1/2 * np.mean((y_predict - p)**2)
+    return loss
 ################################
 # Initialize
 my_data = Data(data)
-print(my_data)
-my_data = my_data[my_data.age<18]
+
 # Train test split
 x_train, x_test = split(my_data.age)
-
 y_train, y_test = split(my_data.weight)
 
 # Normalize
 x_train_norm = normalize(x_train)
 x_test_norm = normalize(x_test)
-# x_test_norm = normalize(x_test[x_test<18])
 y_train_norm = normalize(y_train)
 
 # Make predictions
@@ -91,20 +95,27 @@ m, b = params(x_train_norm, y_train_norm)
 y_pred_norm = my_predict(x_test_norm, m, b)
 
 # Rescale
-y_pred = reverse_normalize(y_pred_norm, np.mean(y_train), np.std(y_train) )
+y_predict = reverse_normalize(y_pred_norm, np.mean(y_train), np.std(y_train) )
 
 print(m)
 print(b)
+
 ##################################
 # Plot
-# Plot
+
 fig, ax = plt.subplots()
-# m_test, b_test = np.polyfit(x_train[x_train<18], y_train,1)
-# plt.plot(x_train, m*x_train + b)
-# ax.plot(x_test, y_test, 'o')
 ax.plot(x_train, y_train, '.')
 xe = np.linspace(0,18,100)
 ye = xe*m + b
 ax.plot(xe,ye)
+# plt.show()
+# exit()
+
+#################################
+po=np.random.uniform(0.5,1., size = NFIT)
+print(type(po))
+print(po)
+res = minimize(loss, po, method=OPT_ALGO, tol=1e-15)
+popt = res.x
+print("OPTIMAL PARAM:",popt)
 plt.show()
-exit()

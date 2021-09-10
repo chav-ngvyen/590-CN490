@@ -1,170 +1,168 @@
 
-#-------------------------------------------
-#VARIOUS UNIVARIABLE PLOTTING EXAMPLES
-	#2021-08-03  JFH
-#-------------------------------------------
-#%%
-##-------------------------------------------
-##SIMPLE STATIC 1D PLOT 
-##-------------------------------------------
+# #-------------------------------------------
+# #VARIOUS UNIVARIABLE PLOTTING EXAMPLES
+# 	#2021-08-03  JFH
+# #-------------------------------------------
+# #%%
+# ##-------------------------------------------
+# ##SIMPLE STATIC 1D PLOT 
+# ##-------------------------------------------
 
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
+# import matplotlib
+# import matplotlib.pyplot as plt
+# import numpy as np
 
-#DEFINE DATA
-x = np.linspace(0, 10,200)
-y  = np.sin(x)
-y1 = y + np.random.normal(0, 0.5, len(x)) #ADD NOISE
+# #DEFINE DATA
+# x = np.linspace(0, 10,200)
+# y  = np.sin(x)
+# y1 = y + np.random.normal(0, 0.5, len(x)) #ADD NOISE
 
-#PLOT 
-fig, ax = plt.subplots()
-ax.plot(x,y,'-',x,y1,'o')
-plt.show()
-exit()
-
-#%%
-##-------------------------------------------
-##SIMPLE PLOT MOVIE: PLOTING FRAMES FROM LOOP 
-##-------------------------------------------
+# #PLOT 
+# fig, ax = plt.subplots()
+# ax.plot(x,y,'-',x,y1,'o')
+# plt.show()
 
 
-import numpy as np
-import matplotlib.pyplot as plt
+# #exit()
 
-# conda install ipympl 
-# So that the plot shows up correctly in VSCode Interactive
-%matplotlib widget
+# # Move exit() statement around to run different parts of the script
 
-#PARAMETERS
-dt=0.01		#time to pause between frames in seconds 
-x0=0.0; dx=0.1  #mesh parameters
-Nframe=100 
-
-plt.figure() #INITIALIZE FIGURE 
-FS=18
-plt.xlabel('Time (s)', fontsize=FS)
-plt.ylabel('Amplitude (cm)', fontsize=FS)
+# ##-------------------------------------------
+# ##SIMPLE PLOT MOVIE: PLOTING FRAMES FROM LOOP 
+# ##-------------------------------------------
 
 
-for i in range(0,Nframe):
-	# x-axis is time increments every 0.1 seconds
-	# y axis is sin(x)
-	x=x0+i*dx; y=np.sin(x)
-	plt.plot(x,y,'bo')
-	plt.pause(dt)
-plt.show()
-exit()
-#%%
-##-------------------------------------------
-##SUBPLOT PLOT MOVIE: PLOTING FRAMES FROM LOOP 
-##-------------------------------------------
+# import numpy as np
+# import matplotlib.pyplot as plt
 
-import numpy as np
-import matplotlib.pyplot as plt
-%matplotlib widget
-import time
+# # conda install ipympl 
+# # So that the plot shows up correctly in VSCode Interactive
 
-#PARAMETERS
-dt=0.005		#time to pause between frames in seconds 
-NP=100 
+# #PARAMETERS
+# dt=0.01		#time to pause between frames in seconds 
+# x0=0.0; dx=0.1  #mesh parameters
+# Nframe=100 
 
-x = np.linspace(0,10,NP)
-y = np.exp(-0.1*x)*np.sin(5*x)
-
-plt.ion()  #Enable interactive mode.
-fig,ax = plt.subplots(3,1,figsize=(15,15))
-ax[0].plot(x,y,'-')
-ax[1].plot(x,y,'-',)
-
-plt.show()
-
-for i in range(0,len(x)):
-
-	ax[0].clear()
-	# 'bo' is blue dot
-	ax[0].plot(x,y,'-'); ax[0].plot(x[i],y[i],'bo')
-	# 'ro' is red dot
-	ax[1].plot(x[i],y[i],'ro')
-	ax[2].plot(x[i],y[i],'ro')
-
-	plt.draw()
-	plt.pause(dt)
-exit()
-
-#%%
-##-------------------------------------------
-## SMOOTHING+SAVING A PLOT TO PNG AND PDF FILES
-##-------------------------------------------
-
-#NOTE: PDF IS A "VECTOR IMAGES" 
-#i.e will scale well and look good in either large or small windows without becoming grainy
+# plt.figure() #INITIALIZE FIGURE 
+# FS=18
+# plt.xlabel('Time (s)', fontsize=FS)
+# plt.ylabel('Amplitude (cm)', fontsize=FS)
 
 
-import matplotlib.pyplot as plt
-%matplotlib widget
-import numpy as np
-from scipy.interpolate import interp1d #,spline 
-import scipy.signal
-import warnings
-from matplotlib.ticker import FormatStrFormatter
+# for i in range(0,Nframe):
+# 	# x-axis is time increments every 0.1 seconds
+# 	# y axis is sin(x)
+# 	x=x0+i*dx; y=np.sin(x)
+# 	plt.plot(x,y,'bo')
+# 	plt.pause(dt)
+# plt.show()
+# #exit()
+# ##-------------------------------------------
+# ##SUBPLOT PLOT MOVIE: PLOTING FRAMES FROM LOOP 
+# ##-------------------------------------------
 
-warnings.filterwarnings("ignore") #supress all warnings
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import time
 
-#GENERATE DATA
-N=1002	#number of data points 
-x=np.linspace(-45,45.0, N); 
-#ye=np.sin(x) #exact
-ye=x*x*np.sin(x) #exact
-y=ye+np.random.normal(0, 100, N)	#add noise
+# #PARAMETERS
+# dt=0.005		#time to pause between frames in seconds 
+# NP=100 
 
-#DEFINE
-f = plt.figure()
-f, ax = plt.subplots()
+# x = np.linspace(0,10,NP)
+# y = np.exp(-0.1*x)*np.sin(5*x)
 
-#AXES
-FS=18	#FONT SIZE
-plt.xlabel('Time (ps)', fontsize=FS)
-plt.ylabel('Amplitude (cm)', fontsize=FS)
-plt.xticks([-40,-20,0,20,40],fontsize=FS)
-plt.yticks([-2000,-1000,0,1000,2000],fontsize=FS)
+# plt.ion()  #Enable interactive mode.
+# fig,ax = plt.subplots(3,1,figsize=(15,15))
+# ax[0].plot(x,y,'-')
+# ax[1].plot(x,y,'-',)
 
-#GENERATE SMOOTH LINE THROUHG NOISY DATA
+# plt.show()
 
-#SMOTHING METHOD-1: savgol_filter
-window=61 #window must me odd and requires adjustment depending on plot
+# for i in range(0,len(x)):
 
-#SMOOTHED DATA (SAME NUMBER OF POINTS AS y)
-#https://riptutorial.com/scipy/example/15878/using-a-savitzky-golay-filter
-ys = scipy.signal.savgol_filter(y, window, 4)  # window size , polynomial order
+# 	ax[0].clear()
+# 	# 'bo' is blue dot
+# 	ax[0].plot(x,y,'-'); ax[0].plot(x[i],y[i],'bo')
+# 	# 'ro' is red dot
+# 	ax[1].plot(x[i],y[i],'ro')
+# 	ax[2].plot(x[i],y[i],'ro')
 
-# #QUADRATICALLY INTERPOLATE THE savgol_filter DATA ONTO LESS DENSE MESH 
-xs1=np.linspace(min(x), max(x), int(0.25*len(x)))
-F=interp1d(x, ys, kind='quadratic');
-ys1=F(xs1); 
-
-#PLOT
-plt.plot(x, y,'.', markersize=16,color='black',markerfacecolor='white',label="raw data") # ,color='black', markersize=8)
-plt.plot(x,ye,'r-',linewidth=3,label="ground truth") 
-# plt.plot(x,ys,'*',color='blue',linewidth=1.0,label="savgol smoothing") 
-plt.plot(xs1,ys1,'*',color='blue',linewidth=1.0,label="savgol smoothing")  
-ax.legend()
-
-#PLOT RANGES
-plt.xlim(min(x),0)
-
-#CONTROL AXIS TICK FORMAT
-ax.yaxis.set_major_formatter(FormatStrFormatter('%4.1f'))
-ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-
-#SAVE IMAGES
-f.savefig('plot-1.png', bbox_inches='tight')
-f.savefig("plot-1.pdf", bbox_inches='tight')
-exit()
+# 	plt.draw()
+# 	plt.pause(dt)
+# #exit()
 
 
+# ##-------------------------------------------
+# ## SMOOTHING+SAVING A PLOT TO PNG AND PDF FILES
+# ##-------------------------------------------
 
-#%%
+# #NOTE: PDF IS A "VECTOR IMAGES" 
+# #i.e will scale well and look good in either large or small windows without becoming grainy
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+# from scipy.interpolate import interp1d #,spline 
+# import scipy.signal
+# import warnings
+# from matplotlib.ticker import FormatStrFormatter
+
+# warnings.filterwarnings("ignore") #supress all warnings
+
+# #GENERATE DATA
+# N=1002	#number of data points 
+# x=np.linspace(-45,45.0, N); 
+# #ye=np.sin(x) #exact
+# ye=x*x*np.sin(x) #exact
+# y=ye+np.random.normal(0, 100, N)	#add noise
+
+# #DEFINE
+# f = plt.figure()
+# f, ax = plt.subplots()
+
+# #AXES
+# FS=18	#FONT SIZE
+# plt.xlabel('Time (ps)', fontsize=FS)
+# plt.ylabel('Amplitude (cm)', fontsize=FS)
+# plt.xticks([-40,-20,0,20,40],fontsize=FS)
+# plt.yticks([-2000,-1000,0,1000,2000],fontsize=FS)
+
+# #GENERATE SMOOTH LINE THROUHG NOISY DATA
+
+# #SMOTHING METHOD-1: savgol_filter
+# window=61 #window must me odd and requires adjustment depending on plot
+
+# #SMOOTHED DATA (SAME NUMBER OF POINTS AS y)
+# #https://riptutorial.com/scipy/example/15878/using-a-savitzky-golay-filter
+# ys = scipy.signal.savgol_filter(y, window, 4)  # window size , polynomial order
+
+# # #QUADRATICALLY INTERPOLATE THE savgol_filter DATA ONTO LESS DENSE MESH 
+# xs1=np.linspace(min(x), max(x), int(0.25*len(x)))
+# F=interp1d(x, ys, kind='quadratic');
+# ys1=F(xs1); 
+
+# #PLOT
+# plt.plot(x, y,'.', markersize=16,color='black',markerfacecolor='white',label="raw data") # ,color='black', markersize=8)
+# plt.plot(x,ye,'r-',linewidth=3,label="ground truth") 
+# # plt.plot(x,ys,'*',color='blue',linewidth=1.0,label="savgol smoothing") 
+# plt.plot(xs1,ys1,'*',color='blue',linewidth=1.0,label="savgol smoothing")  
+# ax.legend()
+
+# #PLOT RANGES
+# plt.xlim(min(x),0)
+
+# #CONTROL AXIS TICK FORMAT
+# ax.yaxis.set_major_formatter(FormatStrFormatter('%4.1f'))
+# ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+
+# #SAVE IMAGES
+# f.savefig('plot-1.png', bbox_inches='tight')
+# f.savefig("plot-1.pdf", bbox_inches='tight')
+# #exit()
+
+
+
 
 ###-------------------------------------------
 ###FUNC-ANIMATION MULTIPLE ANIMATIONS (TAKEN FROM ONLINE)
@@ -172,7 +170,6 @@ exit()
 
 import numpy as np
 import matplotlib.pyplot as plt
-%matplotlib widget
 from matplotlib.animation import FuncAnimation
 
 # https://brushingupscience.com/2016/06/21/matplotlib-animations-the-easy-way/
@@ -203,7 +200,13 @@ except:
 
 # Set which type of animation will be plotted. One of:
 # line, pcolor, scatter, contour, quiver, labels
-animation_type = 'line'
+
+#animation_type = 'line
+#animation_type = 'pcolor'
+#animation_type = 'scatter'
+#animation_type = 'contour'
+#animation_type = 'quiver'
+animation_type = 'labels'
 
 # ----------------------------------------------------------------------------
 # Create data to plot. F is 2D array. G is 3D array
@@ -307,7 +310,7 @@ plt.show()
 # anim.save(animation_type + '.gif', writer='imagemagick')
 exit()
 
-#%%
+
 
 
 

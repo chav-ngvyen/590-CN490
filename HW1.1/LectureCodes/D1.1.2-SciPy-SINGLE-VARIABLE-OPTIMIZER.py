@@ -1,4 +1,4 @@
-#%%
+
 
 # #--------------------------------
 # #OPTIMZE A FUNCTION USING SCIPY
@@ -6,7 +6,6 @@
 
 import numpy as np
 import matplotlib
-%matplotlib widget
 import matplotlib.pyplot as plt
 from   scipy.optimize import minimize
 
@@ -46,14 +45,21 @@ def f1(x):
 	return out
 
 #INITIAL GUESS 
-xo=xmax #
-#xo=np.random.uniform(xmin,xmax)
+# xo=xmax #
+
+xo=np.random.uniform(xmin,xmax)
+print(type(xo))
+print(xo)
+
 print("INITIAL GUESS: xo=",xo, " f(xo)=",f(xo))
+
+# exit()
 res = minimize(f1, xo, method='Nelder-Mead', tol=1e-5)
+print(type(res))
+print(res)
 popt=res.x
 print("OPTIMAL PARAM:",popt)
-
+exit()
 plt.show()
 
-# %%
 # I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND IT COMPLETELY

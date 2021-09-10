@@ -1,7 +1,6 @@
 #--------------------------------
 #SIMPLE UNIVARIABLE REGRESSION EXAMPLE
 #--------------------------------
-#%%
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -45,7 +44,8 @@ ye = G(xe)
 def model(x,p1,p2,p3,p4,p5,p6,p7):
     return p1*np.exp(-((x-p2)/p3)**2.0)+p4*np.exp(-((x-p5)/p6)**2.0)+p7
 popt, pcov = curve_fit(model, x, yn) #,[0.1,0.1,0.1])
-
+# The first time I ran this I got error - because the model couldn't converg?
+# RuntimeError: Optimal parameters not found: Number of calls to function has reached maxfev = 1600.
 #------------------------
 #PLOT
 #------------------------
@@ -63,5 +63,4 @@ plt.ylabel('House Price ($) ', fontsize=FS)
 plt.show()
 
 
-# %%
 # I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND IT COMPLETELY
