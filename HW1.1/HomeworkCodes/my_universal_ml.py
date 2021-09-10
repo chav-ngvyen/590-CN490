@@ -26,7 +26,12 @@ class Data():
         self.age = attributions['x']    
         # y is weight
         self.weight= attributions['y']
-    
+
+
+my_data = Data(data)
+
+
+
 # Linear regression adapted from this https://towardsdatascience.com/linear-regression-from-scratch-cd0dee067f72
 def params(x, p):
     x_mean = np.mean(x)
@@ -53,22 +58,31 @@ def split(input_array):
     return np.asarray(train), np.asarray(test)
 
 # exit()    
-class my_array():
+class scaler():
     def __init__(self, input):
         self.input = input
-        self.mean = np.mean(input)
-        self.std = np.std(input)
+        self.mean = np.mean(self.input)
+        self.std = np.std(self.input)
     
     # This is so I can print an instance of the object out
     def __str__(self):
         return f'{self.input}'
 
     def normalize(self):
-        return (self.input - self.mean) / self.std
+        self.norm = (self.input - self.mean) / self.std
+        return self.norm
 
     def inverse(self):
         return self.std*self.normalize() + self.mean
 
+my_scaler = scaler([1,2,3])
+
+norm = my_scaler.normalize()
+print(norm)
+print("\n")
+print(type(norm))
+print("\n")
+print(dir(norm))
 # ### Used this to test my_array
 # arr = my_array([1,2,3,4,5,6,7,8])
 # print(arr)
@@ -77,13 +91,14 @@ class my_array():
 # # print(arr.std)
 # # print(arr.normalize())
 # # print(arr.inverse())
-# # exit()       
+# # exit() 
+#       
 def normalize(original_array):
     normalized_array = (original_array - np.mean(original_array)) / np.std(original_array)
-    return normalized_array
+    return normalized_array, np.mean(original_array), np.std(original_array)
 
-def reverse_normalize(original_array,normalized_array):
-    reversed_array = np.std(original_array)*normalized_array + np.mean(original_array)
+def reverse_normalize(normalized_array, original_mean, original_std):
+    reversed_array = original_std *normalized_array + original_mean
     return reversed_array    
 
 
@@ -108,8 +123,7 @@ def reverse_normalize(original_array,normalized_array):
 #         pass 
 #     return y_pred
 
-def my_predict(test_set):
-    global b, m
+def my_predict(test_set,m,b):
     y_pred = b + m * test_set
     return(y_pred)
 # Loss function to optimize (minimize)
@@ -163,27 +177,41 @@ print(y_train.shape)
 # exit()
 from sklearn.linear_model import LinearRegression
 print("check here")
-reg = LinearRegression().fit(x_train.reshape(-1,1),y_train)
+# reg = LinearRegression().fit(x_train.reshape(-1,1),y_train)
 
-print(reg.coef_, reg.intercept_)
+# print(reg.coef_, reg.intercept_)
 
 print("check again")
-m, b = params(x_train, y_train)
-print(b)
-print(m)
 
-print("my predict")
-print(my_predict(x_test))
 
-print("sklearn predict")
-print(reg.predict(x_test.reshape(-1,1)))
+# print("my predict")
+# print(my_predict(x_test)) #y_pred
+
+# print("sklearn predict")
+# print(reg.predict(x_test.reshape(-1,1))) #y_pred
 ###################################
 
-x_train_norm = normalize(x_train)
 
-print("my x train norm")
-print(x_train_norm)
-print(np.mean(x_train_norm))
+x_train_norm, x_train_mean, x_train_std = normalize(x_train)
+x_test_norm, x_test_mean, x_test_std = normalize(x_test)
+
+y_train_norm, y_train_mean, y_train_std = normalize(y_train)
+
+
+m, b = params(x_train_norm, y_train_norm)
+my_y_scaled = my_predict(x_test_norm, m, b)
+# print(m,b)
+# exit()
+print(my_y_scaled)
+
+# print(y_train_std)
+
+# exit()
+y_reverse = reverse_normalize(my_y_scaled, y_train_mean, y_train_std)
+
+# print(y_reverse)
+# exit()
+# exit()
 
 ###################################
 from sklearn.preprocessing import StandardScaler
@@ -191,8 +219,35 @@ from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
 
 x_scaled = scaler.fit_transform(x_train.reshape(-1,1))
-print(x_scaled)
-print(np.mean(x_scaled))
+# print(x_scaled)
+y_scaled = scaler.fit_transform(y_train.reshape(-1,1))
+# print(y_scaled)
+reg = LinearRegression().fit(x_scaled, y_scaled)
+# print(reg.coef_)
+# print(reg.intercept_)
+
+print("what")
+y_pred_scaled = reg.predict(scaler.fit_transform(x_test.reshape(-1,1)))
+print(y_pred_scaled)
+print(reg.coef_)
+print(reg.intercept_)
+exit()
+y_pred_trans = scaler.inverse_transform(y_pred_scaled)
+print(y_pred_trans)
+exit()
+# x_scale_reverse = scaler().inverse_transform()
+# print("x train norm \n")
+# print(x_train_norm)
+# print("x scaled \n")
+# print(x_scaled)
+
+print(x_reverse)
+
+exit()
+################################
+print(scaler.inverse_transform(x_scaled))
+print(x_train.reshape(1,-1))
+
 exit()
 print("scaler mean")
 print(scaler.mean_)
