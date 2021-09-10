@@ -172,9 +172,32 @@ m, b = params(x_train, y_train)
 print(b)
 print(m)
 
+print("my predict")
 print(my_predict(x_test))
 
+print("sklearn predict")
 print(reg.predict(x_test.reshape(-1,1)))
+###################################
+
+x_train_norm = normalize(x_train)
+
+print("my x train norm")
+print(x_train_norm)
+print(np.mean(x_train_norm))
+
+###################################
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+
+x_scaled = scaler.fit_transform(x_train.reshape(-1,1))
+print(x_scaled)
+print(np.mean(x_scaled))
+exit()
+print("scaler mean")
+print(scaler.mean_)
+print("scaler scale")
+print(scaler.scale_)
 
 exit()
 x_train = my_array(x_train)
