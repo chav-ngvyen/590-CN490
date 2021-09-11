@@ -1,6 +1,5 @@
 import numpy as np
 import json
-import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from scipy.optimize import minimize
@@ -62,11 +61,12 @@ def reverse_normalize(normalized_array, original_mean, original_std):
     return reversed_array 
 
 # Linear prediction
-def my_predict(test_set,m,b):
+def my_predict(test_set, m,b):
     if model_type == "linear":
         y_pred = b + m * test_set   
     if model_type == "logistic":
         pass
+        # y_pred  = b+p[1]*(1.0/(1.0+np.exp(-(x-p[2])/(p[3]+0.00001))))
     return(y_pred)
 
 # Loss function

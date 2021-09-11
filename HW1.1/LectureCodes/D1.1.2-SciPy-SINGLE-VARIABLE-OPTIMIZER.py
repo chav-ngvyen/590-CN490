@@ -59,7 +59,7 @@ print(type(res))
 print(res)
 popt=res.x
 print("OPTIMAL PARAM:",popt)
-exit()
+# exit()
 plt.show()
 
 # I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND IT COMPLETELY
