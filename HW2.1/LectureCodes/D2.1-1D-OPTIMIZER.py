@@ -12,6 +12,11 @@ def f(x): #parent function
 	return out
 	
 [A, xo, w, S]=[1.,10.,1.,-100] #PARAMETERS
+## A is verticle stretch (amplitude)
+## xo is horizontal shift (recentering parameter)
+## w i s horizontal stretch (width parameter)
+## S is verticle shift (shift parameter)
+
 def fp(x): #parameterized function
 	return A*f((x-xo)/w)+S
 
@@ -26,18 +31,20 @@ FS=18   #FONT SIZE
 plt.xlabel('x', fontsize=FS)
 plt.ylabel('f(x)', fontsize=FS)
 plt.plot(x,y,'b-')
-
+# plt.show()
+# exit()
 
 #SECANT METHOD 
 print("#--------SECANT METHOD--------")
 dx=0.0001 		 					#STEP SIZE FOR FINITE DIFFERENCE
 xi=100*xmax 						#INITIAL GUESS
-#print(xi); exit()
+# print(xi); exit()
 t=0 	 
 tmax=5								#MAX NUMBER OF STEPS
 
-
+# keep doing the steps until t > tmax
 while(t<=tmax):
+	# Add 1 to t so the loop can stop eventually
 	t=t+1
 	yi=fp(xi)
 
@@ -51,7 +58,7 @@ while(t<=tmax):
 	#UPDATE FOR NEXT ITERATION OF LOOP
 	xi=xip1 
 
-
+# exit()
 print("#--------GRADIENT DECENT--------")
 LR=0.1								#LEARNING RATE
 t=0 	 
@@ -78,3 +85,4 @@ while(t<=tmax):
 
 
 plt.show(); #exit()
+# I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND EVERYTHING THAT IT IS DOING
