@@ -28,6 +28,11 @@ def fy(x,y):
 #MESH 
 X, Y = np.meshgrid(np.linspace(xmin, xmax, 40), np.linspace(ymin, ymax, 40))
 
+# print(X)
+# print(X.shape)
+
+# exit()
+
 #SURFACE PLOT 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 ax.set_xlabel('x', fontsize=FS); ax.set_ylabel('y', fontsize=FS); ax.set_zlabel('z', fontsize=FS)
@@ -59,6 +64,7 @@ while(t<=tmax):
 	df_dx=np.array([FX,FY])
 	xip1=xi-LR*df_dx #STEP 
 
+	# If t divides by 10 has no remainder
 	if(t%10==0):
 		df=np.absolute(f(xip1[0],xip1[1])-f(xi[0],xi[1]))
 		print(t,"	",xi[0],"	",xi[1],"	",f(xi[0],xi[1])) #,"	",df)
@@ -75,3 +81,4 @@ while(t<=tmax):
 
 plt.show(); #exit()
 
+# I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND EVERYTHING THAT IT IS DOING
