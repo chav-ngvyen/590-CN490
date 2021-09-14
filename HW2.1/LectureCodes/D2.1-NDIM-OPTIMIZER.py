@@ -26,6 +26,8 @@ def f(x): 	#NON BATCH IMPLEMENTATION
 
 print("#--------GRADIENT DECENT--------")
 
+# exit()
+
 #PARAM
 dx=0.001							#STEP SIZE FOR FINITE DIFFERENCE
 LR=0.0001								#LEARNING RATE
@@ -60,4 +62,7 @@ while(t<=tmax):
 	xi=xip1
 
 exit()
+
+# I HAVE WORKED THROUGH THIS EXAMPLE AND UNDERSTAND EVERYTHING THAT IT IS DOING
+
 

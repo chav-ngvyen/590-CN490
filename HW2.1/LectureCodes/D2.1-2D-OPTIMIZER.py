@@ -70,7 +70,7 @@ while(t<=tmax):
 		print(t,"	",xi[0],"	",xi[1],"	",f(xi[0],xi[1])) #,"	",df)
 	# 	print("	NUMERICAL fx=",FX,"	EXACT=",fx(xi[0],xi[1]))
 	# 	print("	NUMERICAL fy=",FY,"	EXACT=",fy(xi[0],xi[1]))
-	# 	#print("	shape xi",xi.shape, "shape grad",df_dx.shape)
+	# 	#print("	shape xi",xi.shapsse, "shape grad",df_dx.shape)
 		if(df<tol):
 			print("STOPPING CRITERION MET (STOPPING TRAINING)")
 			break
