@@ -11,15 +11,16 @@ DATA_KEYS=['x','is_adult','y']
 model_type="logistic"; NFIT=4; xcol=1; ycol=2;
 
 IPLOT = True
-NORMALIZE = False
-
-# SETTINGS
-algo = "GD"
+NORMALIZE = True
 batch_size = 0.5
 
-# PARADIGM = 'minibatch'
+# ALGORITHMS
+algo = "MOM"
+# algo = "GD"
+
+PARADIGM = 'minibatch'
 # PARADIGM = 'batch'
-PARADIGM = 'stochastic'
+# PARADIGM = 'stochastic'
 
 ############################################
 
@@ -59,7 +60,8 @@ xtest = x[test_idx]; ytest = y[test_idx]
 #CREATE EMPTY CONTAINERS
 loss_train = []
 loss_val = []
-
+epochs = []
+# epoch = 0
 #######################################
 # DEFINE MODELS
 
@@ -75,14 +77,6 @@ def new_loss(p,index=None):
 	yp = model(xbatch,p)
 	mse=(np.mean((yp-ybatch)**2.0))  
 
-	# the training set changes depending on PARADIGm
-	loss_train.append(mse)
-
-	# but the validation set doesn't
-	ypval = model(xv,p)
-	val_mse = (np.mean((ypval-yv)**2.0))
-	loss_val.append(val_mse)
-
 	return mse	
 
 #UN-NORMALIZE
@@ -91,18 +85,26 @@ def unnorm_x(x):
 def unnorm_y(y): 
 	return YSTD*y+YMEAN 
 
-
+#FUNCTION TO MAKE VARIOUS PREDICTIONS FOR GIVEN PARAMETERIZATION
+def my_predict(p, index = None):
+	global YPRED_T,YPRED_V,YPRED_TEST,MSE_T,MSE_V
+	YPRED_T=model(x[index],p)
+	YPRED_V=model(x[val_idx],p)
+	YPRED_TEST=model(x[test_idx],p)
+	MSE_T=np.mean((YPRED_T-y[index])**2.0)
+	MSE_V=np.mean((YPRED_V-y[val_idx])**2.0)
 
 # MY MINIMIZER
-def my_minimizer(fun, x0, algo = "GD"):
-	global loss_train, loss_val
+def my_minimizer(fun, x0):
+	global loss_train, loss_val, algo, epochs
 
 	#General params
-	dx=0.001							#STEP SIZE FOR FINITE DIFFERENCE
+	dx=0.01								#STEP SIZE FOR FINITE DIFFERENCE
 	LR=0.05								#LEARNING RATE
 	n_iter=0 	 						#INITIAL iter COUNTER
 	iter_max=5000						#MAX NUMBER OF iter
 	tol=1e-15							#EXIT AFTER CHANGE IN F IS LESS THAN THIS
+	epoch = 0
 
 	# Momentum params
 	dx_m1 = 0
@@ -112,35 +114,38 @@ def my_minimizer(fun, x0, algo = "GD"):
 	NDIM = len(x0)						#dimension of optimization problem is defined by length of vector
 
 	print("INITAL GUESS: ",xi)
-
-	# PARADIGM SETTINGS
-	if (PARADIGM == 'batch'):
-		index = [range(len(xt))]
-
-	if (PARADIGM == 'stochastic'):
-		index = np.array([0])
-		if (n_iter == 0):
-			index += 1
-			if (n_iter == len(xt)):
-				index = np.array([0])
-	
-	if (PARADIGM == 'minibatch'):
-		mini_index = np.random.permutation(len(xt))
-		CUT_BATCH = int(batch_size*len(xt))
-		if(n_iter%2==0):
-			index = mini_index[:CUT_BATCH]
-		else:
-			index = mini_index[CUT_BATCH:]
-
 	
 	while(n_iter<=iter_max):
-		
+
+		if (PARADIGM == 'batch'):
+			index = [range(len(xt))]
+			if(n_iter > 0):
+				epoch += 1
+
+		if (PARADIGM == 'stochastic'):
+			index = np.array([0])
+			if (n_iter > 0):
+				index += 1
+				# print(index)
+			if (n_iter%len(xt)==0):
+				index = np.array([0])
+				epoch += 1
+
+		if (PARADIGM == 'minibatch'):
+			mini_index = np.random.permutation(len(xt))
+			CUT_BATCH = int(batch_size*len(xt))
+			if(n_iter%2==0):
+				index = mini_index[:CUT_BATCH]
+			else:
+				index = mini_index[CUT_BATCH:]
+				epoch += 1		
+
 		#NUMERICALLY COMPUTE GRADIENT 
 		df_dx=np.zeros(NDIM)
 		for i in range(0,NDIM):
 			dX=np.zeros(NDIM);
 			dX[i]=dx; 
-			xm1=xi-dX; print(xi,xm1,dX,dX.shape,xi.shape)
+			xm1=xi-dX; #print(xi,xm1,dX,dX.shape,xi.shape)
 			df_dx[i]=(fun(xi)-fun(xm1))/dx
 
 		if (algo == "GD"):
@@ -150,7 +155,14 @@ def my_minimizer(fun, x0, algo = "GD"):
 			dx_m1 = alpha*dx_m1 - LR*df_dx
 			xip1 = xi -LR*df_dx + alpha*dx_m1
 
+			print(dx_m1,  xip1)
+
 		if(n_iter%1==0):
+
+			my_predict(xi)	
+
+			epochs.append(epoch); 
+			loss_train.append(MSE_T);  loss_val.append(MSE_V);
 			df=np.mean(np.absolute(fun(xip1)-fun(xi)))
 			
 			if(df<tol):
@@ -159,9 +171,6 @@ def my_minimizer(fun, x0, algo = "GD"):
 					
 		xi = xip1
 		n_iter=n_iter+1
-
-
-
 
 	return xi
 
@@ -207,28 +216,27 @@ if(NORMALIZE & IPLOT):
 	plt.show()
 
 
-if(IPLOT & NORMALIZE == False):
+if(IPLOT):
 	fig, ax = plt.subplots()
 	ax.plot(model(xt,popt), yt, 'o', label='Training set')
 	ax.plot(model(xv,popt), yv, 'x', label = 'Validation set')
 	plt.xlabel('y predicted', fontsize=18)
 	plt.ylabel('y data', fontsize=18)
-	plt.title(PARADIGM +" "+ algo + " (not normalized)")
+	plt.title(PARADIGM +" "+ algo)
 	plt.legend()
 	plt.show()
 
-iter_list = range(len(loss_train))
 
-if(IPLOT & NORMALIZE == False):
+print(epochs)
+print(len(epochs))
+
+if(IPLOT):
 	fig, ax = plt.subplots()
-	ax.plot(iter_list, loss_train, 'o', label='Training loss')
-	ax.plot(iter_list, loss_val, 'x', label = 'Validation loss')
-	# ax.margins(0,0.1)
-	plt.xlim(0,1000)
-	plt.ylim(0,2000)
+	ax.plot(epochs, loss_train, 'o', label='Training loss')
+	ax.plot(epochs, loss_val, 'x', label = 'Validation loss')
 	plt.xlabel('optimizer iterations', fontsize=18)
 	plt.ylabel('loss', fontsize=18)
-	plt.title(PARADIGM +" "+ algo + " (not normalized)")
+	plt.title(PARADIGM +" "+ algo)
 	plt.legend()
 	plt.show()
 
