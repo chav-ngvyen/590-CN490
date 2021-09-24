@@ -175,7 +175,7 @@ def loss(p, index_2_use):
 # ------------------------
 # MINIMIZER FUNCTION
 # ------------------------
-def minimizer(f, xi, algo="GD", LR=0.05):
+def minimizer(f, xi, algo="GD", LR=10):
     global epoch, epochs, loss_train, loss_val
     # x0=initial guess, (required to set NDIM)
     # algo=GD or MOM
