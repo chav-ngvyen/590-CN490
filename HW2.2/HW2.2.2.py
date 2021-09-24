@@ -1,86 +1,77 @@
-# --------------------------------
-# UNIVARIABLE REGRESSION EXAMPLE
-# --------------------------------
-
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 from scipy.optimize import minimize
 
-# ------------------------
-# CODE PARAMETERS
-# ------------------------
+import pandas as pd
 
-# MODEL
-model_type = "logistic"
+# ------------------------
+# USER INPUTS
+# ------------------------
+model_type = "linear"
 PARADIGM = "batch"
 
 # USER PARAMETERS
 IPLOT = True
-INORMALIZE = False
+INORMALIZE = True
+# ------------------------
+url = "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data"
+column_names = [
+    "MPG",
+    "Cylinders",
+    "Displacement",
+    "Horsepower",
+    "Weight",
+    "Acceleration",
+    "Model Year",
+    "Origin",
+]
 
+df = pd.read_csv(
+    url, names=column_names, na_values="?", comment="\t", sep=" ", skipinitialspace=True
+)
 
-# INPUT FOR MODELS
+# ------------------------
+# EXPLORE DATA
+# ------------------------
+import Seaborn_visualizer as SBV
 
-if model_type == "linear":
-    NFIT = 3
-    X_KEYS = ["x1", "x2"]
-    Y_KEYS = ["y"]
-    INPUT_FILE = "./planar_x1_x2_y.json"
+SBV.get_pd_info(df)
+# SBV.pd_general_plots(df, HUE="Origin")
 
+#
+x_col = [1, 2, 3, 4, 5]
+y_col = [0]
+xy_col = x_col + y_col
 
-if model_type == "logistic":
-    NFIT = 4
-    X_KEYS = ["x1", "x2", "x3"]
-    Y_KEYS = ["y"]
-    INPUT_FILE = "./planar_x1_x2_x3_y.json"
+print(x_col)
+X_KEYS = SBV.index_to_keys(df, x_col)
+Y_KEYS = SBV.index_to_keys(df, y_col)
 
-# READ JSON
-with open(INPUT_FILE) as f:
-    my_input = json.load(f)  # read into dictionary
+# CONVERT TO NUMPY
+x = df[X_KEYS].to_numpy()
+y = df[Y_KEYS].to_numpy()
+
+# REMOVE NANs
+xtmp = []
+ytmp = []
+
+for i in range(0, len(x)):
+    if not "nan" in str(x[i]):
+        xtmp.append(x[i])
+        ytmp.append(y[i])
+
+# MAKE ROWS
+X = np.array(xtmp)
+Y = np.array(ytmp)
+NFIT = X.shape[1] + 1
+
 
 # SAVE HISTORY FOR PLOTTING AT THE END
 epoch = 1
 epochs = []
 loss_train = []
 loss_val = []
-
-# ------------------------
-# GENERATE DATA
-# ------------------------
-# N=200
-# X1=[]; Y1=[]
-# for x1 in np.linspace(-5,5,N):
-# 	noise=10*5*np.random.uniform(-1,1,size=1)[0]
-# 	y=2.718*10*x1+100.0+noise
-# 	X1.append(x1); Y1.append(y)
-# input1={}; input1['x1']=X1; input1['y']=Y1
-
-
-# ------------------------
-# CONVERT TO MATRICES AND NORMALIZE
-# ------------------------
-
-# #CONVERT DICTIONARY INPUT AND OUTPUT MATRICES #SIMILAR TO PANDAS DF
-# X=[]; Y=[]
-# for key in input1.keys():
-# 	if(key in X_KEYS): X.append(input1[key])
-# 	if(key in Y_KEYS): Y.append(input1[key])
-
-
-X = []
-Y = []
-
-for key in my_input.keys():
-    if key in X_KEYS:
-        X.append(my_input[key])
-    if key in Y_KEYS:
-        Y.append(my_input[key])
-
-
-# MAKE ROWS=SAMPLE DIMENSION (TRANSPOSE)
-X = np.transpose(np.array(X))
-Y = np.transpose(np.array(Y))
 
 
 print("--------INPUT INFO-----------")
@@ -100,7 +91,8 @@ if INORMALIZE:
     Y = (Y - YMEAN) / YSTD
     I_UNNORMALIZE = True
 else:
-    I_UNNORMALIZE = False
+    I_UNNOMARLIZE = False
+
 # ------------------------
 # PARTITION DATA
 # ------------------------
@@ -184,7 +176,7 @@ def minimizer(f, xi, algo="GD", LR=0.05):
     # PARAM
     iteration = 1  # ITERATION COUNTER
     dx = 0.0001  # STEP SIZE FOR FINITE DIFFERENCE
-    max_iter = 5000  # MAX NUMBER OF ITERATION
+    max_iter = 500  # MAX NUMBER OF ITERATION
     tol = 10 ** -10  # EXIT AFTER CHANGE IN F IS LESS THAN THIS
     NDIM = len(xi)  # DIMENSION OF OPTIIZATION PROBLEM
 
@@ -263,13 +255,13 @@ po = np.random.uniform(2, 1.0, size=NFIT)
 # TRAIN MODEL USING SCIPY MINIMIZ
 p_final = minimizer(loss, po)
 
-scipy_res = minimize(loss, po, args=(train_idx), method="CG", tol=1e-15)
-p_scipy = scipy_res.x
+# scipy_res = minimize(loss, po, args=(train_idx), method="CG", tol=1e-15)
+# p_scipy = scipy_res.x
 
 
 print("INITIAL GUESS:", po)
 print("OPTIMAL PARAMS FROM MY MINIMIZE:", p_final)
-print("OPTIMAL PARAMS FROM SCIPY MINIMIZER:", p_scipy)
+# print("OPTIMAL PARAMS FROM SCIPY MINIMIZER:", p_scipy)
 
 predict(p_final)
 # predict(p_scipy)
@@ -291,12 +283,12 @@ def plot_0():
 
 
 # FUNCTION PLOTS
-def plot_1(xla="x", yla="y"):
+def plot_1(xcol=1, xla="x", yla="y"):
     fig, ax = plt.subplots()
-    ax.plot(X[train_idx], Y[train_idx], "o", label="Training")
-    # ax.plot(X[val_idx]      , Y[val_idx],'x', label='Validation')
-    # ax.plot(X[test_idx]     , Y[test_idx],'*', label='Test')
-    # ax.plot(X[train_idx]    , YPRED_T,'.', label='Model')
+    ax.plot(X[train_idx][:, xcol], Y[train_idx], "o", label="Training")
+    ax.plot(X[val_idx][:, xcol], Y[val_idx], "x", label="Validation")
+    ax.plot(X[test_idx][:, xcol], Y[test_idx], "*", label="Test")
+    ax.plot(X[train_idx][:, xcol], YPRED_T, ".", label="Model")
     plt.xlabel(xla, fontsize=18)
     plt.ylabel(yla, fontsize=18)
     plt.legend()
@@ -318,7 +310,6 @@ def plot_2(xla="y_data", yla="y_predict"):
 if IPLOT:
 
     plot_0()
-    # plot_1()
 
     # UNNORMALIZE RELEVANT ARRAYS
     if I_UNNORMALIZE:
@@ -327,6 +318,11 @@ if IPLOT:
         YPRED_T = YSTD * YPRED_T + YMEAN
         YPRED_V = YSTD * YPRED_V + YMEAN
         YPRED_TEST = YSTD * YPRED_TEST + YMEAN
+        print("Un-normalized")
 
-    # plot_1()
+    i = 0
+    for key in X_KEYS:
+        plot_1(xcol=i, xla=key, yla=Y_KEYS[0])
+        i = i + 1
+
     plot_2()
