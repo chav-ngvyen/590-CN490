@@ -3,21 +3,40 @@
 #--------------------------------
 
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import json
-
+from   scipy.optimize import minimize
 #------------------------
 #CODE PARAMETERS
 #------------------------
 
+# MODEL
+model_type = 'logistic'
+PARADIGM = 'batch'
+
 #USER PARAMETERS
 IPLOT=True
+INORMALIZE = False
 
 
-PARADIGM='batch'
+# INPUT FOR MODELS
 
-model_type="linear"; NFIT=2; X_KEYS=['x1']; Y_KEYS=['y']
+if (model_type == 'linear'):
+	NFIT = 3
+	X_KEYS = ['x1','x2']
+	Y_KEYS = ['y']
+	INPUT_FILE = './planar_x1_x2_y.json'
+
+
+if (model_type == 'logistic'):
+	NFIT = 4
+	X_KEYS = ['x1','x2','x3']
+	Y_KEYS = ['y']
+	INPUT_FILE = './planar_x1_x2_x3_y.json'
+
+# READ JSON
+with open(INPUT_FILE) as f:
+	my_input = json.load(f)  #read into dictionary
 
 #SAVE HISTORY FOR PLOTTING AT THE END
 epoch=1; epochs=[]; loss_train=[];  loss_val=[]
@@ -25,54 +44,51 @@ epoch=1; epochs=[]; loss_train=[];  loss_val=[]
 #------------------------
 #GENERATE DATA
 #------------------------
-N=200
-X1=[]; Y1=[]
-for x1 in np.linspace(-5,5,N):
-	noise=10*5*np.random.uniform(-1,1,size=1)[0]
-	y=2.718*10*x1+100.0+noise
-	X1.append(x1); Y1.append(y)
-input1={}; input1['x1']=X1; input1['y']=Y1
+# N=200
+# X1=[]; Y1=[]
+# for x1 in np.linspace(-5,5,N):
+# 	noise=10*5*np.random.uniform(-1,1,size=1)[0]
+# 	y=2.718*10*x1+100.0+noise
+# 	X1.append(x1); Y1.append(y)
+# input1={}; input1['x1']=X1; input1['y']=Y1
 
 
-print(type(Y1), type(X1))
-print(len(Y1), len(X1))
-# exit()
 
 #------------------------
 #CONVERT TO MATRICES AND NORMALIZE
 #------------------------
 
-#CONVERT DICTIONARY INPUT AND OUTPUT MATRICES #SIMILAR TO PANDAS DF   
+# #CONVERT DICTIONARY INPUT AND OUTPUT MATRICES #SIMILAR TO PANDAS DF   
+# X=[]; Y=[]
+# for key in input1.keys():
+# 	if(key in X_KEYS): X.append(input1[key])
+# 	if(key in Y_KEYS): Y.append(input1[key])
+
+
 X=[]; Y=[]
-for key in input1.keys():
-	if(key in X_KEYS): X.append(input1[key])
-	if(key in Y_KEYS): Y.append(input1[key])
+
+for key in my_input.keys():
+	if(key in X_KEYS): X.append(my_input[key])
+	if(key in Y_KEYS): Y.append(my_input[key])
 
 
-print(type(X), type(Y))
-# exit()
 
 #MAKE ROWS=SAMPLE DIMENSION (TRANSPOSE)
 X=np.transpose(np.array(X))
 Y=np.transpose(np.array(Y))
 
-print(type(X), type(Y))
-# exit()
 
 print('--------INPUT INFO-----------')
 print("X shape:",X.shape); print("Y shape:",Y.shape,'\n')
 
-print(len(X.shape))
-print(len(Y.shape))
 
-# exit()
-
-#TAKE MEAN AND STD DOWN COLUMNS (I.E DOWN SAMPLE DIMENSION)
+# #TAKE MEAN AND STD DOWN COLUMNS (I.E DOWN SAMPLE DIMENSION)
 XMEAN=np.mean(X,axis=0); XSTD=np.std(X,axis=0) 
 YMEAN=np.mean(Y,axis=0); YSTD=np.std(Y,axis=0) 
 
-#NORMALIZE 
-X=(X-XMEAN)/XSTD;  Y=(Y-YMEAN)/YSTD  
+# #NORMALIZE 
+if (INORMALIZE):
+	X=(X-XMEAN)/XSTD;  Y=(Y-YMEAN)/YSTD  
 
 #------------------------
 #PARTITION DATA
@@ -88,20 +104,30 @@ if(f_train+f_val+f_test != 1.0):
 
 #PARTITION DATA
 rand_indices = np.random.permutation(X.shape[0])
+
 CUT1=int(f_train*X.shape[0]); 
 CUT2=int((f_train+f_val)*X.shape[0]); 
 train_idx, val_idx, test_idx = rand_indices[:CUT1], rand_indices[CUT1:CUT2], rand_indices[CUT2:]
+
 print('------PARTITION INFO---------')
 print("train_idx shape:",train_idx.shape)
 print("val_idx shape:"  ,val_idx.shape)
 print("test_idx shape:" ,test_idx.shape)
 
 #------------------------
+#SIGMOID
+#------------------------
+def S(x): return 1.0/(1.0+np.exp(-x))
+if (model_type == 'logistic'): Y = S(Y)
+
+#------------------------
 #MODEL
 #------------------------
 def model(x,p):
-	if(model_type=="linear"):   return  p[0]*x+p[1]  
-	if(model_type=="logistic"): return  p[0]+p[1]*(1.0/(1.0+np.exp(-(x-p[2])/(p[3]+0.0001))))
+	linear = p[0] + np.matmul(x, p[1:].reshape(NFIT-1, 1))
+	# print(x.shape, linear.shape)
+	if(model_type=="linear"): return linear  
+	if(model_type=="logistic"): return S(linear)
 
 #FUNCTION TO MAKE VARIOUS PREDICTIONS FOR GIVEN PARAMETERIZATION
 def predict(p):
@@ -123,7 +149,7 @@ def loss(p,index_2_use):
 #------------------------
 #MINIMIZER FUNCTION
 #------------------------
-def minimizer(f,xi, algo='GD', LR=0.01):
+def minimizer(f,xi, algo='GD', LR=0.05):
 	global epoch,epochs, loss_train,loss_val 
 	# x0=initial guess, (required to set NDIM)
 	# algo=GD or MOM
@@ -131,8 +157,8 @@ def minimizer(f,xi, algo='GD', LR=0.01):
 
 	#PARAM
 	iteration=1			#ITERATION COUNTER
-	dx=0.0001			#STEP SIZE FOR FINITE DIFFERENCE
-	max_iter=5000		#MAX NUMBER OF ITERATION
+	dx=0.01				#STEP SIZE FOR FINITE DIFFERENCE
+	max_iter=500		#MAX NUMBER OF ITERATION
 	tol=10**-10			#EXIT AFTER CHANGE IN F IS LESS THAN THIS 
 	NDIM=len(xi)		#DIMENSION OF OPTIIZATION PROBLEM
 
@@ -158,13 +184,12 @@ def minimizer(f,xi, algo='GD', LR=0.01):
 			dX[i]=dx; 			#TAKE SET ALONG ith DIMENSION
 			xm1=xi-dX; 			#STEP BACK
 			xp1=xi+dX; 			#STEP FORWARD 
-
+			
 			#CENTRAL FINITE DIFF
 			grad_i=(f(xp1,index_2_use)-f(xm1,index_2_use))/dx/2
 
 			# UPDATE GRADIENT VECTOR 
 			df_dx[i]=grad_i 
-			
 		#TAKE A OPTIMIZER STEP
 		if(algo=="GD"):  xip1=xi-LR*df_dx 
 		if(algo=="MOM"): print("REQUESTED ALGORITHM NOT CODED"); exit()
@@ -198,9 +223,19 @@ def minimizer(f,xi, algo='GD', LR=0.01):
 po=np.random.uniform(2,1.,size=NFIT)
 
 #TRAIN MODEL USING SCIPY MINIMIZ 
-p_final=minimizer(loss,po)		
-print("OPTIMAL PARAM:",p_final)
+p_final=minimizer(loss,po)	
+
+scipy_res = minimize(loss, po, args = (train_idx), method='CG', tol=1e-15)
+p_scipy = scipy_res.x
+
+
+print("INITIAL GUESS:", po)
+print("OPTIMAL PARAMS FROM MY MINIMIZE:",p_final)
+print("OPTIMAL PARAMS FROM SCIPY MINIMIZER:", p_scipy)
+
 predict(p_final)
+# predict(p_scipy)
+
 
 #------------------------
 #GENERATE PLOTS
@@ -220,9 +255,9 @@ def plot_0():
 def plot_1(xla='x',yla='y'):
 	fig, ax = plt.subplots()
 	ax.plot(X[train_idx]    , Y[train_idx],'o', label='Training') 
-	ax.plot(X[val_idx]      , Y[val_idx],'x', label='Validation') 
-	ax.plot(X[test_idx]     , Y[test_idx],'*', label='Test') 
-	ax.plot(X[train_idx]    , YPRED_T,'.', label='Model') 
+	# ax.plot(X[val_idx]      , Y[val_idx],'x', label='Validation') 
+	# ax.plot(X[test_idx]     , Y[test_idx],'*', label='Test') 
+	# ax.plot(X[train_idx]    , YPRED_T,'.', label='Model') 
 	plt.xlabel(xla, fontsize=18);	plt.ylabel(yla, fontsize=18); 	plt.legend()
 	plt.show()
 
@@ -238,34 +273,15 @@ def plot_2(xla='y_data',yla='y_predict'):
 if(IPLOT):
 
 	plot_0()
-	plot_1()
+	# plot_1()
 
 	#UNNORMALIZE RELEVANT ARRAYS
-	X=XSTD*X+XMEAN 
-	Y=YSTD*Y+YMEAN 
-	YPRED_T=YSTD*YPRED_T+YMEAN 
-	YPRED_V=YSTD*YPRED_V+YMEAN 
-	YPRED_TEST=YSTD*YPRED_TEST+YMEAN 
+	if (INORMALIZE):
+		X=XSTD*X+XMEAN 
+		Y=YSTD*Y+YMEAN 
+		YPRED_T=YSTD*YPRED_T+YMEAN 
+		YPRED_V=YSTD*YPRED_V+YMEAN 
+		YPRED_TEST=YSTD*YPRED_TEST+YMEAN 
 
-	plot_1()
+	# plot_1()
 	plot_2()
-
-
-
-# #------------------------
-# #DOUBLE CHECK PART-1 OF HW2.1
-# #------------------------
-
-# x=np.array([[3],[1],[4]])
-# y=np.array([[2,5,1]])
-
-# A=np.array([[4,5,2],[3,1,5],[6,4,3]])
-# B=np.array([[3,5],[5,2],[1,4]])
-# print(x.shape,y.shape,A.shape,B.shape)
-# print(np.matmul(x.T,x))
-# print(np.matmul(y,x))
-# print(np.matmul(x,y))
-# print(np.matmul(A,x))
-# print(np.matmul(A,B))
-# print(B.reshape(6,1))
-# print(B.reshape(1,6))
