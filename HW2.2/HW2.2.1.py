@@ -12,7 +12,6 @@ from scipy.optimize import minimize
 # ------------------------
 
 # MODEL
-model_type = "logistic"
 PARADIGM = "batch"
 
 # USER PARAMETERS
@@ -21,19 +20,26 @@ INORMALIZE = False
 
 
 # INPUT FOR MODELS
+NFIT = 4
 
-if model_type == "linear":
-    NFIT = 3
+# model_type = "linear"
+model_type = "logistic"
+
+LR = 5
+
+# MODEL SPECS:
+
+
+if NFIT == 3:
     X_KEYS = ["x1", "x2"]
     Y_KEYS = ["y"]
     INPUT_FILE = "./planar_x1_x2_y.json"
 
-
-if model_type == "logistic":
-    NFIT = 4
+if NFIT == 4:
     X_KEYS = ["x1", "x2", "x3"]
     Y_KEYS = ["y"]
     INPUT_FILE = "./planar_x1_x2_x3_y.json"
+
 
 # READ JSON
 with open(INPUT_FILE) as f:
@@ -45,28 +51,7 @@ epochs = []
 loss_train = []
 loss_val = []
 
-# ------------------------
-# GENERATE DATA
-# ------------------------
-# N=200
-# X1=[]; Y1=[]
-# for x1 in np.linspace(-5,5,N):
-# 	noise=10*5*np.random.uniform(-1,1,size=1)[0]
-# 	y=2.718*10*x1+100.0+noise
-# 	X1.append(x1); Y1.append(y)
-# input1={}; input1['x1']=X1; input1['y']=Y1
-
-
-# ------------------------
-# CONVERT TO MATRICES AND NORMALIZE
-# ------------------------
-
-# #CONVERT DICTIONARY INPUT AND OUTPUT MATRICES #SIMILAR TO PANDAS DF
-# X=[]; Y=[]
-# for key in input1.keys():
-# 	if(key in X_KEYS): X.append(input1[key])
-# 	if(key in Y_KEYS): Y.append(input1[key])
-
+# MANIPULATE DATA
 
 X = []
 Y = []
@@ -101,6 +86,7 @@ if INORMALIZE:
     I_UNNORMALIZE = True
 else:
     I_UNNORMALIZE = False
+
 # ------------------------
 # PARTITION DATA
 # ------------------------
@@ -134,6 +120,8 @@ print("test_idx shape:", test_idx.shape)
 # ------------------------
 # SIGMOID
 # ------------------------
+
+
 def S(x):
     return 1.0 / (1.0 + np.exp(-x))
 
@@ -144,9 +132,10 @@ if model_type == "logistic":
 # ------------------------
 # MODEL
 # ------------------------
+
+
 def model(x, p):
     linear = p[0] + np.matmul(x, p[1:].reshape(NFIT - 1, 1))
-    # print(x.shape, linear.shape)
     if model_type == "linear":
         return linear
     if model_type == "logistic":
@@ -175,15 +164,12 @@ def loss(p, index_2_use):
 # ------------------------
 # MINIMIZER FUNCTION
 # ------------------------
-def minimizer(f, xi, algo="GD", LR=10):
+def minimizer(f, xi, algo="GD"):
     global epoch, epochs, loss_train, loss_val
-    # x0=initial guess, (required to set NDIM)
-    # algo=GD or MOM
-    # LR=learning rate for gradient decent
 
     # PARAM
     iteration = 1  # ITERATION COUNTER
-    dx = 0.0001  # STEP SIZE FOR FINITE DIFFERENCE
+    dx = 0.001  # STEP SIZE FOR FINITE DIFFERENCE
     max_iter = 5000  # MAX NUMBER OF ITERATION
     tol = 10 ** -10  # EXIT AFTER CHANGE IN F IS LESS THAN THIS
     NDIM = len(xi)  # DIMENSION OF OPTIIZATION PROBLEM
@@ -272,7 +258,6 @@ print("OPTIMAL PARAMS FROM MY MINIMIZE:", p_final)
 print("OPTIMAL PARAMS FROM SCIPY MINIMIZER:", p_scipy)
 
 predict(p_final)
-# predict(p_scipy)
 
 
 # ------------------------
@@ -318,7 +303,6 @@ def plot_2(xla="y_data", yla="y_predict"):
 if IPLOT:
 
     plot_0()
-    # plot_1()
 
     # UNNORMALIZE RELEVANT ARRAYS
     if I_UNNORMALIZE:
@@ -328,5 +312,4 @@ if IPLOT:
         YPRED_V = YSTD * YPRED_V + YMEAN
         YPRED_TEST = YSTD * YPRED_TEST + YMEAN
 
-    # plot_1()
     plot_2()

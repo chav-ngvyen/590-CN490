@@ -1,3 +1,4 @@
+import Seaborn_visualizer as SBV
 import numpy as np
 import matplotlib.pyplot as plt
 import json
@@ -34,7 +35,6 @@ df = pd.read_csv(
 # ------------------------
 # EXPLORE DATA
 # ------------------------
-import Seaborn_visualizer as SBV
 
 SBV.get_pd_info(df)
 # SBV.pd_general_plots(df, HUE="Origin")
@@ -126,6 +126,8 @@ print("test_idx shape:", test_idx.shape)
 # ------------------------
 # SIGMOID
 # ------------------------
+
+
 def S(x):
     return 1.0 / (1.0 + np.exp(-x))
 
@@ -136,9 +138,10 @@ if model_type == "logistic":
 # ------------------------
 # MODEL
 # ------------------------
+
+
 def model(x, p):
     linear = p[0] + np.matmul(x, p[1:].reshape(NFIT - 1, 1))
-    # print(x.shape, linear.shape)
     if model_type == "linear":
         return linear
     if model_type == "logistic":
@@ -169,14 +172,11 @@ def loss(p, index_2_use):
 # ------------------------
 def minimizer(f, xi, algo="GD", LR=0.05):
     global epoch, epochs, loss_train, loss_val
-    # x0=initial guess, (required to set NDIM)
-    # algo=GD or MOM
-    # LR=learning rate for gradient decent
 
     # PARAM
     iteration = 1  # ITERATION COUNTER
-    dx = 0.0001  # STEP SIZE FOR FINITE DIFFERENCE
-    max_iter = 500  # MAX NUMBER OF ITERATION
+    dx = 0.001  # STEP SIZE FOR FINITE DIFFERENCE
+    max_iter = 5000  # MAX NUMBER OF ITERATION
     tol = 10 ** -10  # EXIT AFTER CHANGE IN F IS LESS THAN THIS
     NDIM = len(xi)  # DIMENSION OF OPTIIZATION PROBLEM
 
@@ -255,16 +255,11 @@ po = np.random.uniform(2, 1.0, size=NFIT)
 # TRAIN MODEL USING SCIPY MINIMIZ
 p_final = minimizer(loss, po)
 
-# scipy_res = minimize(loss, po, args=(train_idx), method="CG", tol=1e-15)
-# p_scipy = scipy_res.x
-
 
 print("INITIAL GUESS:", po)
 print("OPTIMAL PARAMS FROM MY MINIMIZE:", p_final)
-# print("OPTIMAL PARAMS FROM SCIPY MINIMIZER:", p_scipy)
 
 predict(p_final)
-# predict(p_scipy)
 
 
 # ------------------------
