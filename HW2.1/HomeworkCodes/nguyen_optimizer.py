@@ -148,8 +148,8 @@ def my_minimizer(fun, x0):
 				epoch += 1
 
 		if (PARADIGM == 'stochastic'):
-			index = np.array([0])
 			if (n_iter > 0):
+				index = np.array([0])
 				index += 1
 				# print(index)
 			if (n_iter % len(xt) == 0 and n_iter > 0):
