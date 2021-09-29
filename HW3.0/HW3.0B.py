@@ -106,3 +106,6 @@ print(wb)
 # print(len(wb))
 for val, i in enumerate(range(len(wb))):
     print(val, wb[i].shape, wb[i])
+# Next step: use matmul to loop over layers
+# SIGMOID
+# Ignore multiple inputs for now
