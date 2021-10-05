@@ -42,16 +42,16 @@ input_activation = 'sigmoid'
 # ---------------------------------------------- #
 
 # hidden_layer_size = 32
-hidden_layer_size = 32
+hidden_layer_size = 64
 # hidden_layer_size = 128
 
-num_epochs = 5
+num_epochs = 20
 retrain_epochs = 8
 my_batch_size = 1
 
 f_train = 0.8           # Fraction for training vs validation set
 
-k = 2                   # K-FOLDS
+k = 4                   # K-FOLDS
 
 
 # --------------- REGULARIZATION --------------- #
@@ -104,7 +104,7 @@ def build_model():
         model = models.Sequential([
             layers.Dense(1,
             activation = output_activation,
-            input_shape = (1,))
+            input_shape = (train_data.shape[1],))
         ])
 
     if model_type == 'linear':
