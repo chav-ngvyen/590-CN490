@@ -6,6 +6,7 @@ from keras.datasets import imdb
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import models
+from tensorflow.keras import regularizers
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,32 +22,27 @@ import matplotlib.pyplot as plt
 # ---------------------------------------------- #
 I_PLOT = True
 
-model_type = 'logistic'
+model_type = 'binary'
 
-num_epochs = 20
+num_epochs = 30
+retrain_epochs = 5
 my_batch_size = 10000
+
+GAMMA_L1 = 0.000
+GAMMA_L2 = 0.001
 
 # ---------------------------------------------- #
 my_optimizer = 'rmsprop'
 
-# ---------------------------------------------- #
-# --------------- LOSS FUNCTIONS --------------- #
-# ---------------------------------------------- #
-
 # ----------------- REGRESSION ----------------- #
 # my_loss_function = 'MeanSquaredError'
-my_loss_function = 'MeanAbsoluteError'
+# my_loss_function = 'MeanAbsoluteError'
 # my_loss_function = 'mean_squared_logarithmic_error'
 
 # ------------ BINARY CLASSIFICATION ----------- #
-# my_loss_function = 'binary_crossentropy'
+my_loss_function = 'binary_crossentropy'
 # my_loss_function = 'hinge'
 # my_loss_function = 'squared_hinge'
-
-
-
-
-
 
 
 # ---------------------------------------------- #
@@ -80,15 +76,13 @@ print(y_train[0:30])
 # ----------------- BUILD MODEL ---------------- #
 input_shape=(x_train.shape[1],)
 
-if model_type == 'ann':
+if model_type == 'binary':
     model = models.Sequential()
-    model.add(layers.Dense(16, activation='relu', input_shape=input_shape))
-    model.add(layers.Dense(16, activation='relu'))
+    model.add(layers.Dense(16, activation='relu', input_shape=input_shape,
+    kernel_regularizer = regularizers.l1_l2(l1 = GAMMA_L1, l2 = GAMMA_L2)))
+    model.add(layers.Dense(16, activation='relu',
+    kernel_regularizer = regularizers.l1_l2(l1 = GAMMA_L1, l2 = GAMMA_L2)))
     model.add(layers.Dense(1, activation='sigmoid'))
-
-if model_type == 'logistic':
-    model = models.Sequential()
-    model.add(layers.Dense(1, activation = 'sigmoid', input_shape = input_shape))
 
 # ---------------- COMPILE MODEL --------------- #
 
@@ -189,57 +183,30 @@ if(I_PLOT):
     plt.legend()
     plt.show()
 
+# ----------- RETRAIN WITH EPOCHS = 5 ---------- #
+
+print("Retraining with ", retrain_epochs, " epochs")
+
+if model_type == 'binary':
+    model = models.Sequential()
+    model.add(layers.Dense(16, activation='relu', input_shape=input_shape,
+    kernel_regularizer = regularizers.l1_l2(l1 = GAMMA_L1, l2 = GAMMA_L2)))
+    model.add(layers.Dense(16, activation='relu',
+    kernel_regularizer = regularizers.l1_l2(l1 = GAMMA_L1, l2 = GAMMA_L2)))
+    model.add(layers.Dense(1, activation='sigmoid'))
 
 
-exit()
+model.compile(optimizer=my_optimizer,
+              loss=my_loss_function,
+              metrics=['accuracy'])
 
+model.fit(partial_x_train,
+          partial_y_train,
+          epochs=retrain_epochs,
+          batch_size=my_batch_size,
+          validation_data=(x_val, y_val))
 
-# acc = history.history['accuracy']
-# val_acc = history.history['val_accuracy']
-# loss = history.history['loss']
-# val_loss = history.history['val_loss']
+print("Evaluating test set")
 
-# epochs = range(1, len(acc) + 1)
+results = model.evaluate(x_test, y_test)
 
-# #PLOT TRAINING AND VALIDATION LOSS HISTORY
-# def plot_0():
-#     fig, ax = plt.subplots()
-#     ax.plot(epochs, loss_train, 'o', label='Training loss')
-#     ax.plot(epochs, loss_val, 'o', label='Validation loss')
-#     plt.xlabel('epochs', fontsize=18)
-#     plt.ylabel('loss', fontsize=18)
-#     plt.legend()
-#     plt.show()
-
-# plot_0()
-
-
-
-
-
-
-# # TRAINING & VALIDATION LOSS
-# # "bo" is for "blue dot"
-# plt.plot(epochs, loss, 'bo', label='Training loss')
-# # b is for "solid blue line"
-# plt.plot(epochs, val_loss, 'b', label='Validation loss')
-# plt.title('Training and validation loss')
-# plt.xlabel('Epochs')
-# plt.ylabel('Loss')
-# plt.legend()
-
-# # TRAINING & VALIDATION ACCURACY
-# plt.clf()   # clear figure
-# acc_values = history_dict['accuracy']
-# val_acc_values = history_dict['val_accuracy']
-
-# plt.plot(epochs, acc, 'bo', label='Training acc')
-# plt.plot(epochs, val_acc, 'b', label='Validation acc')
-# plt.title('Training and validation accuracy')
-# plt.xlabel('Epochs')
-# plt.ylabel('Loss')
-# plt.legend()
-
-# plt.show()
-
-# plt.show()
