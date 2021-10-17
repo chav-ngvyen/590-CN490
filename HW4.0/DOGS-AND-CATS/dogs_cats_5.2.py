@@ -6,20 +6,26 @@ from tensorflow.keras import optimizers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing import image
 
-import os
-import tensorflow as tf
+# -------------------------------- SET PARAMS -------------------------------- #
 
-# ---------------------------------------------------------------------------- #
+# RESOURCE = "CPU"; import os; os.environ["CUDA_VISIBLE_DEVICES"]="-1"; import tensorflow as tf
+RESOURCE = "CPU_GPU"; import os; os.environ["CUDA_VISIBLE_DEVICES"]="0"; import tensorflow as tf
 
-# RESOURCE = "CPU_ONLY"
-RESOURCE = "CPU_GPU"
+if (RESOURCE == "CPU"):
+        print("Using CPU")
+        BATCH_SIZE = 200
+        EPOCHS = 5
+        STEPS_PER_EPOCH = 10
+        VAL_STEPS = 1000/BATCH_SIZE
 
-BATCH_SIZE = 20
-EPOCHS = 20
-STEPS_PER_EPOCH = 100
+if (RESOURCE == "CPU_GPU"):
+        print("Using CPU and GPU")
+        BATCH_SIZE = 20
+        EPOCHS = 30
+        STEPS_PER_EPOCH = 100
+        VAL_STEPS = 1000/BATCH_SIZE
 
-# ---------------------------------------------------------------------------- #
-# -------------------------- CHOOSE CPU ONLY OR BOTH CPU AND GPU ------------------------- #
+
 ''' NOTE: My current default is both because I am running Ubuntu 18.04 natively on a dual-boot Windows machine so Tensorflow has access to my NVIDIA GPU
 If you are running Ubuntu on VM, Tensorflow can only see the CPU. Same with native macOS
 
@@ -30,16 +36,15 @@ Source 1: https://stackoverflow.com/questions/44500733/tensorflow-allocating-gpu
 Source 2: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
 '''
 
-if (RESOURCE == "CPU_ONLY"):
-        os.environ["CUDA_VISIBLE_DEVICES"]="-1"; import tensorflow as tf
-        print("Using CPU")
-
-if (RESOURCE == "CPU_GPU"):
-         os.environ["CUDA_VISIBLE_DEVICES"]="0"; import tensorflow as tf
-         print("Using CPU and GPU")
+# if (RESOURCE == "CPU"):
+#         os.environ["CUDA_VISIBLE_DEVICES"]="-1"; import tensorflow as tf
+# if (RESOURCE == "CPU_GPU"):
+#         os.environ["CUDA_VISIBLE_DEVICES"]="0"; import tensorflow as tf
+# ---------------------------------------------------------------------------- #
 
 from tensorflow.python.client import device_lib
 print(device_lib.list_local_devices())
+print("Resource: ", RESOURCE, "batch size: ", BATCH_SIZE, "N epochs: ", EPOCHS, "Steps per epoch: ", STEPS_PER_EPOCH)
 
 # ---------------------------------------------- #
 #                    Set paths                   #
@@ -112,6 +117,7 @@ validation_generator = test_datagen.flow_from_directory(
         batch_size=BATCH_SIZE,
         class_mode='binary')
 
+print()
 # Need to break loop because this is a generator class
 for data_batch, labels_batch in train_generator:
     print('data batch shape:', data_batch.shape)
@@ -123,7 +129,7 @@ history = model.fit(
       steps_per_epoch=STEPS_PER_EPOCH,
       epochs=EPOCHS,
       validation_data=validation_generator,
-      validation_steps=5)
+      validation_steps=VAL_STEPS)
 
 # Save the model
 model.save('./Models/5.2/cats_and_dogs_small_1.h5')
@@ -135,13 +141,13 @@ val_acc = history.history['val_acc']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
 epochs = range(len(acc))
-plt.plot(epochs, acc, 'bo', label='Training acc')
-plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.plot(epochs, acc, 'bo', label='Training acc', color = 'blue')
+plt.plot(epochs, val_acc, 'b', label='Validation acc', color = 'blue')
 plt.title('Training and validation accuracy')
 plt.legend()
 plt.figure()
-plt.plot(epochs, loss, 'bo', label='Training loss')
-plt.plot(epochs, val_loss, 'b', label='Validation loss')
+plt.plot(epochs, loss, 'bo', label='Training loss', color = 'orange')
+plt.plot(epochs, val_loss, 'b', label='Validation loss', color = 'orange')
 plt.title('Training and validation loss')
 plt.legend()
 # Non-blocking plot
@@ -176,19 +182,6 @@ x = image.img_to_array(img)
 
 # Reshape it to (1, 150, 150, 3)
 x = x.reshape((1,) + x.shape)
-
-# The .flow() command below generates batches of randomly transformed images.
-# It will loop indefinitely, so we need to `break` the loop at some point!
-# i = 0
-# for batch in datagen.flow(x, batch_size=1):
-#     plt.figure(i)
-#     imgplot = plt.imshow(image.array_to_img(batch[0]))
-#     i += 1
-#     if i % 4 == 0:
-#         break
-
-# #Using block=False so the rest of the script would keep running
-# plt.show(block=False)
 
 # ---------------------------------------------- #
 
@@ -246,8 +239,7 @@ history = model.fit(
       steps_per_epoch=STEPS_PER_EPOCH,
       epochs=EPOCHS,
       validation_data=validation_generator,
-      validation_steps=5)
-
+      validation_steps=VAL_STEPS)
 # Save model
 model.save('./Models/5.2/cats_and_dogs_small_2.h5')
 
@@ -260,16 +252,20 @@ val_loss = history.history['val_loss']
 
 epochs = range(len(acc))
 
-plt.plot(epochs, acc, 'bo', label='Training acc')
-plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.plot(epochs, acc, 'bo', label='Training acc', color = 'blue')
+plt.plot(epochs, val_acc, 'b', label='Validation acc', color = 'blue')
 plt.title('Training and validation accuracy')
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
 plt.legend()
 
 plt.figure()
 
-plt.plot(epochs, loss, 'bo', label='Training loss')
-plt.plot(epochs, val_loss, 'b', label='Validation loss')
+plt.plot(epochs, loss, 'bo', label='Training loss', color = 'orange')
+plt.plot(epochs, val_loss, 'b', label='Validation loss', color = 'orange')
 plt.title('Training and validation loss')
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
 plt.legend()
 
 # Don't include block=False here so that the script ends
