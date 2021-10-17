@@ -36,10 +36,6 @@ Source 1: https://stackoverflow.com/questions/44500733/tensorflow-allocating-gpu
 Source 2: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
 '''
 
-# if (RESOURCE == "CPU"):
-#         os.environ["CUDA_VISIBLE_DEVICES"]="-1"; import tensorflow as tf
-# if (RESOURCE == "CPU_GPU"):
-#         os.environ["CUDA_VISIBLE_DEVICES"]="0"; import tensorflow as tf
 # ---------------------------------------------------------------------------- #
 
 from tensorflow.python.client import device_lib
@@ -132,7 +128,7 @@ history = model.fit(
       validation_steps=VAL_STEPS)
 
 # Save the model
-model.save('./Models/5.2/cats_and_dogs_small_1.h5')
+model.save('./Models/cats_and_dogs_small_2.5_1.h5')
 # exit()
 # ---------------------------------------------- #
 # Plot
@@ -241,7 +237,7 @@ history = model.fit(
       validation_data=validation_generator,
       validation_steps=VAL_STEPS)
 # Save model
-model.save('./Models/5.2/cats_and_dogs_small_2.h5')
+model.save('./Models/cats_and_dogs_small_5.2_2.h5')
 
 # ---------------------------------------------- #
 # Plot
