@@ -1,5 +1,5 @@
 # Holmes, Poirot or Lupin? 
-## A neural nets approach to Natural Language Processing and Authorship Detection
+## A deep learning approach to Natural Language Processing and Authorship Detection
 
 I train a neural network to determine whether a chunk of text was written by Arthur Conan Doyle, Agatha Christie and Maurice LeBlanc. I test the neural net on parts of Holmes/ Poirot/ Lupin stories not in the training set to determine if it can tell the three authors apart from a short chunk of text. Afterwards, I test the model on texts written by the authors about different characters/ settings (The Lost World - Doyle, for example) to see if it can determine the ``penmanship'' of the authors when they write about other characters/ topics. 
 
