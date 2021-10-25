@@ -1,3 +1,4 @@
+import config
 import tensorflow as tf 
 import numpy as np
 np.random.seed(42)
@@ -20,15 +21,18 @@ from tensorflow.keras.optimizers import RMSprop
 # from tensorflow.keras.datasets import imdb
 # from tensorflow.keras.preprocessing import sequence
 # ---------------------------------------------------------------------------- #
+
+
 author_list = ['leblanc','doyle','christie']
 train_dir = './Train_books'
-# test_dir = './Test_books'
-test_dir = './Test_books2'
+test_dir = config.test_dir
+# test_dir = './Test_books2'
+data_dir = './Data'
 # --------
-chunk_size = 4 # How many sentences in a text chunk
-maxlen = 1000 # cut chunk off after how many words
-max_words = 10000 # consider top 10k words in the dataset
-training_split = 0.8
+chunk_size = config.chunk_size # How many sentences in a text chunk
+maxlen = config.maxlen # cut chunk off after how many words
+max_words = config.max_words # consider top 10k words in the dataset
+training_split = config.training_split
 
 EPOCHS=30
 BATCH_SIZE = 128
@@ -116,6 +120,50 @@ y_train = labels[:training_samples]
 x_val = data[training_samples: ]
 y_val = labels[training_samples: ]
 
+np.save('./Data/x_train.npy', x_train)
+np.save('./Data/y_train.npy', y_train)
+np.save('./Data/x_val.npy', x_val)
+np.save('./Data/y_val.npy', y_val)
+
+# ---------------------------------------------------------------------------- #
+
+# Process the test data
+print("Processing test data")
+labels = []
+texts = []
+
+for author_no, author in enumerate(author_list):
+    dir_name = os.path.join(test_dir, author)
+    if os.path.exists(dir_name) is not True:
+        print("Path does not exist")
+        pass
+    else:
+        for book_no, fname in enumerate(os.listdir(dir_name)):
+            if fname[-4:] == '.txt':
+                f = open(os.path.join(dir_name, fname))        
+                raw = f.read()
+                f.close()
+
+        start = re.search(r"\*\*\* START OF .* \*\*\*", raw).end()
+        stop = re.search(r"\*\*\* END OF ", raw).start()    
+        content = raw[start:stop]
+            
+        chunks = chunker(content, chunk_size)  
+        print("Book number: ", book_no, "Written by: ", author, "and has: ", len(chunks), "chunks.")
+            
+        for i in range(len(chunks)):
+            texts.append(chunks[i])
+            labels.append(author_no)
+            
+sequences = tokenizer.texts_to_sequences(texts)
+x_test = pad_sequences(sequences, maxlen = maxlen)
+y_test = np.asarray(labels)
+
+np.save('./Data/x_test.npy', x_test)
+np.save('./Data/y_test.npy', y_test)
+
+
+exit()
 
 # ---------------------------------------------------------------------------- #
 # Fit model
