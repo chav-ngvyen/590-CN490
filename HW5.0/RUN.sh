@@ -11,7 +11,7 @@ ScriptLoc=${PWD}
 # done
 # exit
 cd $ScriptLoc
-for i in 02*.py 03*.py
+for i in 0*.py
 do
 	filename=${i%%.*}
 	# echo $filename$_log.txt

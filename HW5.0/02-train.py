@@ -1,6 +1,8 @@
 import config # config file
 
 import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.TF_LOG_LEVEL
+print("TF log level =", os.environ['TF_CPP_MIN_LOG_LEVEL'])
+import tensorflow as tf 
 
 # print(os.environ['TF_CPP_MIN_LOG_LEVEL'])
 # exit()
@@ -12,7 +14,6 @@ import regex as re
 from nltk import tokenize 
 
 
-import tensorflow as tf 
 import os.path
 
 import matplotlib.pyplot as plt

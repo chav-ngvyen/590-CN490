@@ -19,6 +19,11 @@ y_test = np.load(config.processed_path+'y_test_'+config.TEST+'.npy'); print("Y t
 test_acc, test_loss = model.evaluate(x_test, y_test)
 print("TEST:",test_acc, test_loss)
 
+
+y_pred = model.predict(x_test)
+y_pred_labels = np.argmax(y_pred,axis=1)
+
+print(y_pred_labels); exit()
 # ---------------------------------------------------------------------------- #
 
 acc = history['acc']
@@ -30,7 +35,7 @@ epochs = range(1, len(acc) + 1)
 
 plt.plot(epochs, acc, 'bo', label='Training acc')
 plt.plot(epochs, val_acc, 'b', label='Validation acc')
-plt.plot(epochs,test_acc, 'rx', label = 'Test accuracy' )
+plt.plot(epochs, test_acc, 'rx', label = 'Test accuracy' )
 plt.title('Training and validation accuracy')
 plt.legend()
 plt.figure()
