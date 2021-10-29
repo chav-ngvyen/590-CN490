@@ -5,19 +5,23 @@ I train a neural network to determine whether a chunk of text was written by Art
 
 ## HOW TO RUN:
 Step 1: Change hyperparameters in config.py; save it
+
 Step 2: bash RUN.sh
-Done :)
+
 
 
 ### Codes:
+#### RUN.sh
+Run this to execute 01-clean, 02-train, and 03-config. Remember to change the parameters in RERUN_CLEAN and RERUN_TRAIN in config.py to rerun cleaning and training scripts.
+Also saves the terminal output to ./Logs
 #### config.py
 This is the script to change script 01 cleaning options, does hyperparameter tuning in script 02, and evaluate different models in script 03.  
 #### 01-clean.py
 Cleans the raw novels in downloaded from Project Gutenberg in .txt format, split each novel into chunks of n sentences, tokenize the text sequences using keras' built-in text processing tool and save the training and test data as .npy files
 #### 02-train.py
-Train the neural network using inputs from config.py, save models, plots and log files.
+Train the neural network using inputs from config.py, save models/
 #### 03-evaluate.py
-Evaluate the model
+Evaluate the models, make and save plots
 
 ### Folders:
 #### Train_books, Test_books, Test_books2
