@@ -5,7 +5,7 @@ Train a neural network to determine whether a chunk of text was written by Arthu
 ## HOW TO RUN:
 Step 1: Change hyperparameters in config.py; save it
 
-Step 2: bash RUN.sh
+Step 2: bash RUN.sh | tee ./Logs/RUN.txt
 
 
 

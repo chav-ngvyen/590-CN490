@@ -2,10 +2,9 @@ import config
 
 def main():
     RERUN = config.RERUN_CLEAN
-    print(RERUN)
     if RERUN == 0:
         print("Not rerunning cleaning script")
-        return # quit/stop/exit
+        return 
     else:
         import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.TF_LOG_LEVEL
         import tensorflow as tf 
@@ -16,8 +15,6 @@ def main():
 
         import regex as re
         from nltk import tokenize 
-        # import os
-        # import os.path
 
         import matplotlib.pyplot as plt
 
@@ -28,8 +25,6 @@ def main():
         from tensorflow.keras.layers import SimpleRNN, LSTM, Embedding
         from tensorflow.keras import layers
         from tensorflow.keras.optimizers import RMSprop
-
-
 
         author_list = ['leblanc','doyle','christie']
 
@@ -110,7 +105,6 @@ def main():
 
         labels = np.asarray(labels)
 
-        # print(labels); exit()    
         print('shape of data tensor:' , data.shape)
         print('shape of label tensor: ', labels.shape)
 
@@ -171,9 +165,6 @@ def main():
             
             np.save(processed_path+'x_test'+test_type+'.npy', x_test)
             np.save(processed_path+'y_test'+test_type+'.npy', y_test)
-
-
-
 
 if __name__ == "__main__":
     main()

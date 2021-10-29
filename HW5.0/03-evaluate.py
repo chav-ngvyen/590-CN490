@@ -38,8 +38,6 @@ print("\n Validation accuracy: ", val_acc, "Vlidation loss: ", val_loss)
 print("\n Test accuracy: ", test_acc, "Test loss: ", test_loss)
 
 
-
-
 # ---------------------------------------------------------------------------- #
 # PLOTS
 # Load training history for plotting

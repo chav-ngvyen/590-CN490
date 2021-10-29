@@ -2,24 +2,20 @@ import config
 
 def main():
     RERUN = config.RERUN_TRAIN
-    if RERUN == 0:
+    if RERUN == 0: 
         print("Not rerunning training script")
-        return # quit/stop/exit
+        return 
+    
     else:
-
         import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.TF_LOG_LEVEL
         print("TF log level =", os.environ['TF_CPP_MIN_LOG_LEVEL'])
         import tensorflow as tf 
-
-        # print(os.environ['TF_CPP_MIN_LOG_LEVEL'])
-        # exit()
 
         import numpy as np
         np.random.seed(42)
 
         import regex as re
         from nltk import tokenize 
-
 
         import os.path
 
@@ -40,6 +36,7 @@ def main():
         #             filemode='w',
         #             level=logging.INFO)
         # ---------------------------------------------------------------------------- #
+        
         # Print config details
         print("\nConfig:")
         print("\nTest: ", config.TEST)
@@ -56,15 +53,11 @@ def main():
         # ---------------------------------------------------------------------------- #
         # Load data cleaned from 01-clean.py
 
-
         print("\nData:")
         x_train = np.load(config.processed_path+'x_train.npy'); print("X train shape: ", x_train.shape)
         y_train = np.load(config.processed_path+'y_train.npy'); print("Y train shape: ", y_train.shape)
         x_val = np.load(config.processed_path+'x_val.npy'); print("X val shape: ", x_val.shape)
         y_val = np.load(config.processed_path+'y_val.npy'); print("Y val shape: ", y_val.shape)
-
-        #x_test = np.load("./Data/x_test.npy"); print("X test shape: ", x_test.shape)
-        #y_test = np.load("./Data/y_test.npy"); print("Y test shape: ", y_test.shape)
 
         # ---------------------------------------------------------------------------- #
         # Define models
