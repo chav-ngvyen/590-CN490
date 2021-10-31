@@ -1,7 +1,8 @@
 import os
 # ---------------------------------------------------------------------------- #
-TEST = 'UNIVERSE'
-# TEST = 'AUTHOR'
+# TEST = 'CORPUS'
+# TEST = 'UNIVERSE'
+TEST = 'AUTHOR'
 # ---------------------------------------------------------------------------- #
 TF_LOG_LEVEL = '2'
 # ---------------------------------------------------------------------------- #
@@ -9,8 +10,8 @@ MODEL = 'CONV1D'
 # MODEL = 'SRNN'
 # MODEL = 'LSTM'
 # ---------------------------------------------------------------------------- #
-RERUN_CLEAN = 1
-# RERUN_CLEAN = 0
+# RERUN_CLEAN = 1
+RERUN_CLEAN = 0
 
 RERUN_TRAIN = 1
 # RERUN_TRAIN = 0
@@ -20,8 +21,9 @@ chunk_size = 4 # How many sentences in a text chunk
 maxlen = 1000 # cut chunk off after how many words
 max_words = 10000 # consider top 10k words in the dataset
 training_split = 0.8
+val_split = 0.15
 # ---------------------------------------------------------------------------- #
-EPOCHS = 100
+EPOCHS = 40
 BATCH_SIZE = 128
 # ---------------------------------------------------------------------------- #
 SCORE_TO_MONITOR = 'val_acc'; MODE = 'max'

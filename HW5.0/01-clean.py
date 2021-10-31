@@ -37,7 +37,8 @@ def main():
         maxlen = config.maxlen # cut chunk off after how many words
         max_words = config.max_words # consider top 10k words in the dataset
         training_split = config.training_split
-
+        val_split = config.val_split
+        
         EPOCHS=config.EPOCHS
         BATCH_SIZE = config.BATCH_SIZE
         MODEL = config.MODEL
@@ -81,10 +82,14 @@ def main():
                         f.close()  
                     # Get the real content of the book
                     # Based on https://people.duke.edu/~ccc14/sta-663/TextProcessingExtras.html
-                    start = re.search(r"\*\*\* START OF ", raw).end()
-                    stop = re.search(r"\*\*\* END OF ", raw).start()    
-                    content = raw[start:stop]
+                    try:
+                        start = re.search(r"\*\*\* START OF ", raw).end()
+                        stop = re.search(r"\*\*\* END OF ", raw).start()    
+                        content = raw[start:stop]
                     
+                    except AttributeError:
+                        content = raw
+                        
                     chunks = chunker(content, chunk_size)  
                     print("Book ", index, "written by: ", author, "and has: ", len(chunks), "chunks.")
                     
@@ -115,18 +120,25 @@ def main():
 
         data = data[indices]
         labels = labels[indices]
-        training_samples = int(data.shape[0]*training_split); print("\n Train/ Val split: ", training_split)
-
+        training_samples = int(data.shape[0]*training_split) #; print("\n Train/ Val split: ", training_split)
+        val_samples = int(data.shape[0]*(val_split+training_split))
+        
         x_train = data[:training_samples]; print("\n Train x shape: ", x_train.shape)
         y_train = labels[:training_samples]
 
-        x_val = data[training_samples: ]; print("\n Val x shape: ", x_val.shape)
-        y_val = labels[training_samples: ]
+        x_val = data[training_samples: val_samples]; print("\n Val x shape: ", x_val.shape)
+        y_val = labels[training_samples: val_samples]
+        
+        x_test = data[val_samples:]; print("\n Test x shape: ", x_test.shape)
+        y_test = labels[val_samples:]
 
         np.save(processed_path+'x_train.npy', x_train)
         np.save(processed_path+'y_train.npy', y_train)
         np.save(processed_path+'x_val.npy', x_val)
         np.save(processed_path+'y_val.npy', y_val)
+        np.save(processed_path+'x_test_CORPUS.npy', x_test)
+        np.save(processed_path+'y_test_CORPUS.npy', y_test)  
+             
         # ---------------------------------------------------------------------------- #
         for test_type in ['_UNIVERSE', '_AUTHOR']:
             raw_test_dir = test_books_path+test_type
@@ -146,11 +158,13 @@ def main():
                             f = open(os.path.join(dir_name, fname))        
                             raw = f.read()
                             f.close()
-
-                        start = re.search(r"\*\*\* START OF .* \*\*\*", raw).end()
-                        stop = re.search(r"\*\*\* END OF ", raw).start()    
-                        content = raw[start:stop]
-                        
+                        try:
+                            start = re.search(r"\*\*\* START OF .* \*\*\*", raw).end()
+                            stop = re.search(r"\*\*\* END OF ", raw).start()    
+                            content = raw[start:stop]
+                        except AttributeError:
+                            content = raw
+                            
                         chunks = chunker(content, chunk_size)  
                         print("Book ", index, "written by: ", author, "and has: ", len(chunks), "chunks.")
                         

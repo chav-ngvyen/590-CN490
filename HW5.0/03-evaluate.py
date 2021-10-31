@@ -34,7 +34,7 @@ test_acc, test_loss = model.evaluate(x_test, y_test, batch_size = config.BATCH_S
 print("MODEL PERFORMANCE")
 
 print("\n Training accuracy: ", train_acc, "Training loss: ", train_loss)
-print("\n Validation accuracy: ", val_acc, "Vlidation loss: ", val_loss)
+print("\n Validation accuracy: ", val_acc, "Validation loss: ", val_loss)
 print("\n Test accuracy: ", test_acc, "Test loss: ", test_loss)
 
 
