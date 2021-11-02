@@ -1,1 +1,100 @@
-Not rerunning cleaning script
+
+ Processing train books in : ./Raw_books/Train/leblanc
+secret_of_salek.txt written by:  leblanc  has:  1965 chunks.
+lupin_vs_sholmes.txt written by:  leblanc  has:  1332 chunks.
+crystal_stopper.txt written by:  leblanc  has:  1473 chunks.
+arsene_lupin.txt written by:  leblanc  has:  1663 chunks.
+blonde_lady.txt written by:  leblanc  has:  1298 chunks.
+adventures_of_arsene_lupin.txt written by:  leblanc  has:  1089 chunks.
+813.txt written by:  leblanc  has:  2595 chunks.
+teeth_of_tiger.txt written by:  leblanc  has:  2384 chunks.
+golden_triangle.txt written by:  leblanc  has:  1881 chunks.
+
+ Processing train books in : ./Raw_books/Train/doyle
+study_in_scarlet.txt written by:  doyle  has:  689 chunks.
+adventures_of_sherlock_holmes.txt written by:  doyle  has:  1700 chunks.
+hound_of_baskerville.txt written by:  doyle  has:  971 chunks.
+return_of_sherlock_holmes.txt written by:  doyle  has:  1946 chunks.
+valley_of_fear.txt written by:  doyle  has:  1060 chunks.
+
+ Processing train books in : ./Raw_books/Train/christie
+man_in_brown_suit.txt written by:  christie  has:  1733 chunks.
+poirot_investigates.txt written by:  christie  has:  1212 chunks.
+mysterious_affair_at_styles.txt written by:  christie  has:  1337 chunks.
+Check raw file for plymouth_express.txt
+plymouth_express.txt written by:  christie  has:  145 chunks.
+26473 26473
+She set off, so to speak, at random. The road was long, miles and miles
+long. But such was her haste to have done with these incomprehensible
+events and to recover her tranquillity and to forget what had happened
+that she walked with great strides, quite oblivious of the fact that
+this wearisome exertion was superfluous, since she had a carriage
+following her. She went up hill and down dale and hardly thought at all, refusing to
+seek the solution of all the riddles that were put to her. 0
+
+Done processing, starting tokenizer
+Found 28429 unique tokens.
+
+Longest sequence:  229
+shape of data tensor: (26473, 250)
+shape of label tensor:  (26473,)
+
+ Train x shape:  (21178, 250)
+
+ Val x shape:  (3971, 250)
+
+ Test x shape:  (1324, 250)
+
+Processing test books in : ./Raw_books/Test_UNIVERSE/leblanc  for  _UNIVERSE
+hollow_needle.txt written by:  leblanc  has:  898 chunks.
+confessions_of_arsene_lupin.txt written by:  leblanc  has:  1262 chunks.
+
+Processing test books in : ./Raw_books/Test_UNIVERSE/doyle  for  _UNIVERSE
+memoirs_of_sherlock_holmes.txt written by:  doyle  has:  1101 chunks.
+adventure_of_dying_detective.txt written by:  doyle  has:  140 chunks.
+sign_of_the_four.txt written by:  doyle  has:  587 chunks.
+
+Processing test books in : ./Raw_books/Test_UNIVERSE/christie  for  _UNIVERSE
+murder_on_the_links.txt written by:  christie  has:  1125 chunks.
+secret_adversary.txt written by:  christie  has:  1505 chunks.
+
+Done processing, starting tokenizer
+
+Longest sequence:  253
+Test x:  (1324, 250)
+Tesy y:  (1324,)
+
+Processing test books in : ./Raw_books/Test_AUTHOR/leblanc  for  _AUTHOR
+frontier.txt written by:  leblanc  has:  1142 chunks.
+woman_of_mystery.txt written by:  leblanc  has:  1838 chunks.
+three_eyes.txt written by:  leblanc  has:  1214 chunks.
+secret_tomb.txt written by:  leblanc  has:  1470 chunks.
+tremendous_event written by:  leblanc  has:  1470 chunks.
+
+Processing test books in : ./Raw_books/Test_AUTHOR/doyle  for  _AUTHOR
+round_the_fires.txt written by:  doyle  has:  1278 chunks.
+the_lost_world.txt written by:  doyle  has:  1116 chunks.
+white_company.txt written by:  doyle  has:  1465 chunks.
+poison_belt.txt written by:  doyle  has:  470 chunks.
+sir_nigel.txt written by:  doyle  has:  1379 chunks.
+tales_of_terror.txt written by:  doyle  has:  1025 chunks.
+
+Processing test books in : ./Raw_books/Test_AUTHOR/christie  for  _AUTHOR
+Check raw file for matv.txt
+matv.txt written by:  christie  has:  1648 chunks.
+Check raw file for mf.txt
+mf.txt written by:  christie  has:  1182 chunks.
+Check raw file for cm.txt
+cm.txt written by:  christie  has:  1399 chunks.
+Check raw file for mcfts.txt
+mcfts.txt written by:  christie  has:  1654 chunks.
+Check raw file for pfor.txt
+pfor.txt written by:  christie  has:  1120 chunks.
+Check raw file for 45p.txt
+45p.txt written by:  christie  has:  1276 chunks.
+
+Done processing, starting tokenizer
+
+Longest sequence:  388
+Test x:  (6618, 250)
+Tesy y:  (6618,)

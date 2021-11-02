@@ -5,6 +5,7 @@ import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.TF_LOG_LEVEL
 
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from config import MODEL_LIST
 # ---------------------------------------------------------------------------- #
 # Function to predict classes (undo softmax)
 def predict_classes(input):
@@ -12,57 +13,67 @@ def predict_classes(input):
     ypred_classes = np.argmax(ypred, axis =1 )
     return ypred_classes
 # ---------------------------------------------------------------------------- #
-# Load the trained model, print summary
-model = load_model(config.best_model_path, compile = True)
-print("\nModel summary: ", model.summary())
-
-# ---------------------------------------------------------------------------- #
-print("Applying model on test data, type: ", config.TEST)
-
+# Load the training & test data
+print("Loading data")
 x_train = np.load(config.processed_path+'x_train.npy'); print("X train shape: ", x_train.shape)
 y_train = np.load(config.processed_path+'y_train.npy'); print("Y train shape: ", y_train.shape)
 x_val = np.load(config.processed_path+'x_val.npy'); print("X val shape: ", x_val.shape)
 y_val = np.load(config.processed_path+'y_val.npy'); print("Y val shape: ", y_val.shape)
-x_test = np.load(config.processed_path+'x_test_'+config.TEST+'.npy'); print("X test shape: ", x_test.shape)
-y_test = np.load(config.processed_path+'y_test_'+config.TEST+'.npy'); print("Y test shape: ", y_test.shape)
 
+print("\nTest CORPUS means that the test set came from the same books as training & validation")
+x_test_CORPUS = np.load(config.processed_path+'x_test_CORPUS.npy'); print("X test (CORPUS) shape: ", x_test_CORPUS.shape)
+y_test_CORPUS = np.load(config.processed_path+'y_test_CORPUS.npy'); print("Y test (CORPUS) shape: ", y_test_CORPUS.shape)
 
-train_loss, train_acc = model.evaluate(x_train, y_train, batch_size=config.BATCH_SIZE)
-val_loss, val_acc = model.evaluate(x_val, y_val, batch_size=config.BATCH_SIZE)
-test_acc, test_loss = model.evaluate(x_test, y_test, batch_size = config.BATCH_SIZE)
+print("\nTest UNIVERSE means that the test set came from the same universe/ series as training & validation")
+x_test_UNIVERSE = np.load(config.processed_path+'x_test_UNIVERSE.npy'); print("X test (UNIVERSE) shape: ", x_test_UNIVERSE.shape)
+y_test_UNIVERSE = np.load(config.processed_path+'y_test_UNIVERSE.npy'); print("Y test (UNIVERSE) shape: ", y_test_UNIVERSE.shape)
 
-print("MODEL PERFORMANCE")
-
-print("\n Training accuracy: ", train_acc, "Training loss: ", train_loss)
-print("\n Validation accuracy: ", val_acc, "Validation loss: ", val_loss)
-print("\n Test accuracy: ", test_acc, "Test loss: ", test_loss)
-
+print("\nTest AUTHOR means that the test set came from writings about topics/ characters outside of training & validation")
+x_test_AUTHOR = np.load(config.processed_path+'x_test_AUTHOR.npy'); print("X test (AUTHOR) shape: ", x_test_AUTHOR.shape)
+y_test_AUTHOR = np.load(config.processed_path+'y_test_AUTHOR.npy'); print("Y test (AUTHOR) shape: ", y_test_AUTHOR.shape)
 
 # ---------------------------------------------------------------------------- #
-# PLOTS
-# Load training history for plotting
-history=np.load(config.best_model_training_scores_path,allow_pickle='TRUE').item()
-acc = history['acc']
-val_acc = history['val_acc']
-loss = history['loss']
-val_loss = history['val_loss']
+# Load the trained models in path, print summary
+model_path = os.path.join("./Models")
+for mname in os.listdir("./Models"):
+    if mname[-5:]==".hdf5":
+        print("-------------------------")
+        print("LOADING: ", mname)
+        print("-------------------------")
+        
+        model = load_model("./Models/"+mname, compile = True)
+        print("\nFITTING MODELS: ")
 
-epochs = range(1, len(acc) + 1)
+        print("Training set: ")
+        train_loss, train_acc = model.evaluate(x_train, y_train, batch_size=config.BATCH_SIZE)
+        print("Validation set: ")
+        val_loss, val_acc = model.evaluate(x_val, y_val, batch_size=config.BATCH_SIZE)
+        print("Test CORPUS: ")
+        test_loss_CORPUS, test_acc_CORPUS = model.evaluate(x_test_CORPUS, y_test_CORPUS, batch_size = config.BATCH_SIZE)
+        print("Test UNIVERSE: ")
+        test_loss_UNIVERSE, test_acc_UNIVERSE = model.evaluate(x_test_UNIVERSE, y_test_UNIVERSE, batch_size = config.BATCH_SIZE)
+        print("Test AUTHOR: ")
+        test_loss_AUTHOR, test_acc_AUTHOR = model.evaluate(x_test_AUTHOR, y_test_AUTHOR, batch_size = config.BATCH_SIZE)
 
+        print("----------------------")
+        print("MODEL PERFORMANCE")
+        print("----------------------")
 
-plt.plot(epochs, acc, 'bo', label='Training acc')
-plt.plot(epochs, val_acc, 'b', label='Validation acc')
-plt.title('Training and validation accuracy')
-plt.legend()
-plt.savefig(config.plot_save_path+'_acc.png', dpi=300)
-plt.show()
-plt.clf()
+        print("\n Training accuracy: ", train_acc, "Training loss: ", train_loss)
+        print("\n Validation accuracy: ", val_acc, "Validation loss: ", val_loss)
+        
+        print("--------------------")
+        print("\nTest CORPUS means that the test set came from the same books as training & validation")
+        print("\n Test accuracy (CORPUS): ", test_acc_CORPUS, "Test loss (CORPUS): ", test_loss_CORPUS)
+        
+        print("--------------------")
+        print("\nTest UNIVERSE means that the test set came from the same universe/ series as training & validation")        
+        print("\n Test accuracy (UNIVERSE): ", test_acc_UNIVERSE, "Test loss (UNIVERSE): ", test_loss_UNIVERSE)
+        
+        print("--------------------")
+        print("\nTest AUTHOR means that the test set came from writings about topics/ characters outside of training & validation")
+        print("\n Test accuracy (AUTHOR): ", test_acc_AUTHOR, "Test loss (AUTHOR): ", test_loss_AUTHOR)
 
-plt.plot(epochs, loss, 'bo', label='Training loss')
-plt.plot(epochs, val_loss, 'b', label='Validation loss')
-plt.title('Training and validation loss')
-plt.legend()
-plt.savefig(config.plot_save_path+'_loss.png', dpi=300)
-plt.show()
+# # ---------------------------------------------------------------------------- #
 
-exit()
+# exit()
