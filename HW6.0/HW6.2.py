@@ -36,8 +36,8 @@ from sklearn.metrics import accuracy_score
 # ---------------------------------------------------------------------------- #
 
 n_bottleneck = 100
-epochs = 1
-batch_size = 5000
+epochs = 50
+batch_size = 10000
 # Functional API representation of Prof Hickman's deep model in MNIST-DAE
 # The code is borrowed from https://blog.keras.io/building-autoencoders-in-keras.html
 
@@ -59,59 +59,12 @@ x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
 #x = layers.UpSampling2D((2, 2))(x)
 decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
 
-# # This model maps an input to its reconstruction
-# autoencoder = Model(input_img, decoded)
-# # This model maps an input to its encoded representation
-# encoder = Model(input_img, encoded)
-
-# # ---------------------------------------------------------------------------- #
-# autoencoder.compile(optimizer='adam',
-#                     loss='binary_crossentropy',
-#                     metrics = ['acc'])
-
-# print("\nAutoencoder summary:")
-# print(autoencoder.summary())
-
-
-# # Create the Encoder and Decoder#pass the gray scale input image of size(28,28,1)
-# inputs = Input(shape=(28, 28, 1), name='input_layer')
-# # Conv Block 1 -> BatchNorm->leaky Relu
-# encoded = layers.Conv2D(32, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
-# encoded = layers.BatchNormalization(name='batchnorm_1')(encoded)
-# encoded = layers.LeakyReLU(name='leaky_relu_1')(encoded)# Conv Block 2 -> BatchNorm->leaky Relu
-# encoded = layers.Conv2D(64, kernel_size=3, strides= 2, padding='same', name='conv_2')(encoded)
-# encoded = layers.BatchNormalization(name='batchnorm_2')(encoded)
-# encoded = layers.LeakyReLU(name='leaky_relu_2')(encoded)
-# # Conv BloatchNorm->leaky Relu
-# encoded = layers.Conv2D(64, kernel_size=3, strides=2, padding='same', name='conv_3')(encoded)
-# encoded = layers.BatchNormalization(name='batchnorm_3')(encoded)
-# encoded = layers.LeakyReLU(name='leaky_relu_3')(encoded)#Decoder
-# # DeConv BBatchNorm->leaky Relu
-# decoded = layers.Conv2DTranspose(64, 3, strides= 1, padding='same',name='conv_transpose_1')(encoded)
-# decoded = layers.BatchNormalization(name='batchnorm_4')(decoded)
-# decoded = layers.LeakyReLU(name='leaky_relu_4')(decoded)
-# # DeConv BBatchNorm->leaky Relu
-# decoded = layers.Conv2DTranspose(64, 3, strides= 2, padding='same', name='conv_transpose_2')(decoded)
-# decoded = layers.BatchNormalization(name='batchnorm_5')(decoded)
-# decoded = layers.LeakyReLU(name='leaky_relu_5')(decoded)
-# # DeConv Block 3-> BatchNorm->leaky Relu
-# decoded = layers.Conv2DTranspose(32, 3, 2, padding='same', name='conv_transpose_3')(decoded)
-# decoded = layers.BatchNormalization(name='batchnorm_6')(decoded)
-# decoded = layers.LeakyReLU(name='leaky_relu_6')(decoded)
-# # output
-# outputs = layers.Conv2DTranspose(1, 3, 1,padding='same', activation='sigmoid', name='conv_transpose_4')(decoded)
-
-# # ---------------------------------------------------------------------------- #
-def SSIMLoss(y_true, y_pred):
-      return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred,1.0))
 
 
 autoencoder = tf.keras.Model(input_img, decoded)
-# optimizer = tf.keras.optimizers.Adam(lr = 0.0005)
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError(), metrics=['acc'])
 
 autoencoder.summary()
-
 
 # ---------------------------------------------------------------------------- #
 # Validation is done on MNIST data too
@@ -244,95 +197,53 @@ x_train_pred = autoencoder.predict(x_train)
 
 
 mse = losses.MeanSquaredError()
+train_losses = []
+for i in range(len(x_train)):
+  train_loss = mse(x_train[i], x_train_pred[i]).numpy()
+  train_losses.append(train_loss)
 
-losses = mse(x_train, x_train_pred).numpy()
-
-
-mean_loss = np.mean(losses)
+mean_loss = np.mean(train_losses)
 print("Mean binary_crossentropy: ",mean_loss)
-std_loss = np.std(losses)
+std_loss = np.std(train_losses)
 print("Standard deviation: ", std_loss)
 threshold = mean_loss+3*std_loss
 print("Anomaly threshold: 3 std from the mean binary crossentropy: ", threshold)
+max_loss = np.max(train_loss)
+print("\nMax loss: ", max_loss)
 
-exit()
+train_anomalies = [i for i, loss in enumerate(train_losses) if loss>threshold]
+train_anomalies_percent = len(train_anomalies)/len(train_losses)*100
+
+print("\nTrain MNIST shape: ", x_train.shape)
+print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
+
 
 # ---------------------------------------------------------------------------- #
-# # Find the anomaly rate for the normal MNIST validation
-# train_reconstruction_loss = np.asarray(reconstruction_loss)
-
-
-# train_anomalies = [i for i, loss in enumerate(train_reconstruction_loss[0]) if loss>threshold]
-# print(train_anomalies.shape)
-# train_anomalies_percent = len(train_anomalies)/len(train_reconstruction_loss)*100
-
-# print("\nTrain MNIST shape: ", x_train.shape)
-# print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
-
-# ---------------------------------------------------------------------------- #
-# https://www.analyticsvidhya.com/blog/2021/05/anomaly-detection-using-autoencoders-a-walk-through-in-python/
-# This blog has the 
-def find_threshold(model, x_true):
-    x_pred = model.predict(x_true)
-    # provides losses of individual instances
-    reconstruction_loss = losses.binary_crossentropy(x_true, x_pred)
-    # threshold for anomaly scores
-    threshold = np.mean(reconstruction_loss.numpy()) + 3*np.std(reconstruction_loss.numpy())
-    return threshold
-
-# print(find_threshold(autoencoder,x_train))
-
-
-def get_predictions(model, x_test, threshold):
-    x_test_pred = model.predict(x_test)
-    # provides losses of individual instances
-    errors = losses.binary_crossentropy(x_test, x_test_pred).numpy()
-    # 0 = anomaly, 1 = normal
-    anomaly_mask = pd.Series(errors) > threshold
-    preds = anomaly_mask.map(lambda x: 0.0 if x == True else 1.0)
-    return preds
-
-threshold = find_threshold(autoencoder,x_train)
-print(f"Threshold: {threshold}")
-# Threshold: 0.01001314025746261
-x_val_pred = get_predictions(autoencoder, x_val, threshold)
-accuracy_score(x_val_pred, x_val)
-# 0.944
-
-exit()
-# ---------------------------------------------------------------------------- #
-# Find the anomaly rate for the normal MNIST validation
 x_val_pred = autoencoder.predict(x_val)
-number_loss = losses.binary_crossentropy(x_val, x_val_pred)
-number_loss = np.asarray(number_loss)
-number_anomalies = [i for i, loss in enumerate(number_loss) if loss>threshold]
-number_anomalies_percent = len(number_anomalies)/len(number_loss)*100
+validation_losses =[]
+for i in range(len(x_val)):
+      val_loss = mse(x_val[i], x_val_pred[i]).numpy()
+      validation_losses.append(val_loss)
+
+val_anomalies = [i for i, loss in enumerate(validation_losses) if loss>threshold]
+val_anomalies_percent = len(val_anomalies)/len(validation_losses)*100
 
 print("\nValidation MNIST shape: ", x_val.shape)
-print("Validation MNIST anomaly detection rate: ", number_anomalies_percent, "%")
-
+print("Validation MNIST anomaly detection rate: ", val_anomalies_percent, "%")
 
 # ---------------------------------------------------------------------------- #
-# Find the anomaly rate for the fashion MNIST set
 x_test_pred = autoencoder.predict(x_test)
-fashion_loss = losses.binary_crossentropy(x_test, x_test_pred)
-fashion_loss = np.asarray(fashion_loss)
-fashion_anomalies = [i for i, loss in enumerate(fashion_loss) if loss>threshold]
-fashion_anomalies_percent = len(fashion_anomalies)/len(fashion_loss)*100
+test_losses =[]
+for i in range(len(x_test)):
+      test_loss = mse(x_test[i], x_test_pred[i]).numpy()
+      test_losses.append(test_loss)
 
-print("\nFashion MNIST test shape: ", x_test.shape)
-print("Fashion MNIST anomaly detection rate: ", fashion_anomalies_percent, "%")
+test_anomalies = [i for i, loss in enumerate(test_losses) if loss>threshold]
+test_anomalies_percent = len(test_anomalies)/len(test_losses)*100
 
-# ---------------------------------------------------------------------------- #
-# Plot of the cross entropies and anomaly threshold
+print("\nFashion MNIST shape: ", x_test.shape)
+print("Fashion MNIST anomaly detection rate: ", test_anomalies_percent, "%")
 
-fig, ax = plt.subplots()
-ax.axhline(y=threshold, color='k', linestyle=':')
-ax.plot(range(len(fashion_loss)), fashion_loss, 'bo', alpha = 0.5, ms=1, label = "Fashion MNIST")
-ax.plot(range(len(number_loss)), number_loss, 'ro', alpha = 0.5,  ms=1, label = "MNIST")
-plt.title("Anomaly detection based on cross entropy")
-plt.xlabel("Index")
-plt.ylabel("Cross entropy between original and reconstructed image")
-plt.legend()
-plt.savefig("./Plots/HW6.2_cross_entropy_detection.png")
-# plt.show()
+
+
+exit()
