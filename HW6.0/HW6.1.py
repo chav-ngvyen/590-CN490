@@ -13,197 +13,228 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import load_model, Model
 
+from tensorflow.keras.datasets import mnist, fashion_mnist
+
 # ---------------------------------------------------------------------------- #
-# Sources: 
-# A lot of this came directly from tf's tutorial on autoencoder
+# Sources: My code is built on the sources list below
+
+# TF's tutorial on autoencoder
 # https://www.tensorflow.org/tutorials/generative/
-# this blog post
+# Keras' tutorial on autoencoder
+# https://blog.keras.io/building-autoencoders-in-keras.html
+
+# These blog posts
 # https://medium.com/analytics-vidhya/image-anomaly-detection-using-autoencoders-ae937c7fd2d1
+# https://medium.com/analytics-vidhya/unsupervised-learning-and-convolutional-autoencoder-for-image-anomaly-detection-b783706eb59e
+# https://towardsdatascience.com/anomaly-detection-using-autoencoders-5b032178a1ea
+# https://towardsdatascience.com/a-keras-based-autoencoder-for-anomaly-detection-in-sequences-75337eaed0e5
+
 # Chapter 8 of Chollet
-# and WEEK10 codes from Prof Hickman
+# WEEK10 codes from Prof Hickman
 
 # ---------------------------------------------------------------------------- #
 
-# Training on MNIST dataset
-# Get data
+n_bottleneck = 100
+epochs = 100
+batch_size = 1000
+# Functional API representation of Prof Hickman's deep model in MNIST-DAE
+# The code is borrowed from https://blog.keras.io/building-autoencoders-in-keras.html
 
-from tensorflow.keras.datasets import mnist
-(x_train, _), (x_test, _) = mnist.load_data()
+# This is our input image
+input_img = Input(shape=(28*28,))
+# "encoded" is the encoded representation of the input
+encoded = layers.Dense(128, activation='relu')(input_img)
+encoded = layers.Dense(64, activation='relu')(encoded)
+encoded = layers.Dense(n_bottleneck, activation='relu')(encoded)
 
-#
-# Normalize
-x_train = x_train.astype('float32') / 255.
-x_test = x_test.astype('float32') / 255.
+# "decoded" is the lossy reconstruction of the input
+decoded = layers.Dense(64, activation='relu')(encoded)
+decoded = layers.Dense(128, activation='relu')(decoded)
+decoded = layers.Dense(28*28, activation='sigmoid')(decoded)
 
-# Reshape
-# x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
-# x_test = np.reshape(x_test, (len(x_test), 28, 28, 1))
-
-x_train = x_train.reshape(60000,28*28)
-x_test = x_test.reshape(10000,28*28)
-
-print("\n X train shape: ", x_train.shape)
-print("\n X test shape: ", x_test.shape)
+# This model maps an input to its reconstruction
+autoencoder = Model(input_img, decoded)
+# This model maps an input to its encoded representation
+encoder = Model(input_img, encoded)
 
 # ---------------------------------------------------------------------------- #
-# Cholet
-# seq_model = Sequential()
-# seq_model.add(layers.Dense(32, activation='relu', input_shape=(64,)))
-# seq_model.add(layers.Dense(32, activation='relu'))
-# seq_model.add(layers.Dense(10, activation='softmax'))
-
-# input_tensor = Input(shape=(64,))
-# x = layers.Dense(32, activation='relu')(input_tensor)
-# x = layers.Dense(32, activation='relu')(x)
-# output_tensor = layers.Dense(10, activation='softmax')(x)
-
-# Hickman
-# model = models.Sequential()
-# model.add(layers.Dense(400,  activation='relu', input_shape=(28 * 28,)))
-# model.add(layers.Dense(n_bottleneck, activation='relu'))
-# model.add(layers.Dense(400,  activation='relu'))
-# model.add(layers.Dense(28*28,  activation='relu'))
-n_bottleneck = 10
-
-input_tensor = Input(shape = (28*28,))
-encoded = layers.Dense(400, activation='relu')(input_tensor)
-bottleneck = layers.Dense(n_bottleneck, activation='relu')(encoded)
-decoded = layers.Dense(400, activation='relu')(bottleneck)
-output_tensor = layers.Dense(28*28, activation = 'relu')(decoded)
-
-autoencoder = Model(input_tensor, output_tensor)
-autoencoder.summary()
-
-autoencoder.compile(optimizer='rmsprop',
-                    loss=losses.MeanSquaredError(),
+autoencoder.compile(optimizer='adam',
+                    loss='binary_crossentropy',
                     metrics = ['acc'])
 
-autoencoder.fit(x_train, x_train,
-                epochs=10,
-                batch_size=128,
+# ---------------------------------------------------------------------------- #
+# Validation is done on MNIST data too
+(x_train, _), (x_val, _) = mnist.load_data()
+
+x_train = x_train.astype('float32') / 255.
+x_val = x_val.astype('float32') / 255.
+x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
+x_val = x_val.reshape((len(x_val), np.prod(x_val.shape[1:])))
+
+print("Normal MNIST train shape: ", x_train.shape)
+print("Normal MNIST test shape: ", x_val.shape)
+
+
+history = autoencoder.fit(x_train, x_train,
+                epochs=epochs,
+                batch_size=batch_size,
                 shuffle=True,
-                validation_data=(x_test, x_test))
-print(dir(autoencoder))
-exit()
+                validation_data=(x_val, x_val),
+                verbose = 2)
 
-latent_dim = config.N_BOTTLENECK
+# ---------------------------------------------------------------------------- #
+def report(history,title='',I_PLOT=True):
+    if(I_PLOT):
+        #PLOT HISTORY
+        epochs = range(1, len(history.history['loss']) + 1)
+        plt.figure()
+        plt.plot(epochs, history.history['loss'], 'r-', label='Training loss')
+        plt.plot(epochs, history.history['val_loss'], 'b-', label='Validation loss')
+        plt.title(title)
+        plt.xlabel("Epochs")
+        plt.ylabel("Binary Crossentropy")
+        plt.legend()
+        plt.savefig('./Plots/HW6.1_autoencoder_history_loss.png')
+        plt.clf()
+        
+        plt.plot(epochs, history.history['acc'], 'ro', label='Training acc')
+        plt.plot(epochs, history.history['val_acc'], 'b-', label='Validation acc')
+        plt.title(title)
+        plt.xlabel("Epochs")
+        plt.ylabel("Accuracy")
+        plt.legend()
+        plt.savefig('./Plots/HW6.1_autoencoder_history_acc.png')
+        plt.close()
 
-# Using the functional API
+# Save the autoencoder plots
+report(history)
+# Save the autoencoder
+autoencoder.save('./Models/HW6.1_autoencoder.hdf5')
 
-# Encoder
-inputs = tf.keras.Input(shape=(28*28, ), name='input_layer')
-# Flatten -> Dense
-encoded = tf.keras.layers.Flatten()(inputs)
-encoded = tf.keras.layers.Dense(latent_dim, activation = 'relu', name= 'bottleneck')(encoded)
+print("Finished training")
 
-# Decoder
-# DeConv Block 1-> BatchNorm->leaky Relu
-decoded = tf.keras.layers.Dense(28*28, activation = 'relu')(encoded)
-decoded = tf.keras.layers.Reshape((28,28))(decoded)
-outputs = tf.keras.layers.Dense(10,activation='sigmoid')(decoded)
+# ---------------------------------------------------------------------------- #
+# Read in the MNIST FASION 
+# This part is adapted from 
+# http://www.renom.jp/notebooks/tutorial/clustering/anomaly-detection-using-autoencoder/notebook.html
+print("Reading in Fashion MNIST")
+(_, _), (x_test, _) = fashion_mnist.load_data()
 
-# The Model class turns an input tensor and output tensor into a model
-model = Model(inputs, outputs)
-# Let's look at it!
-model.summary()
-exit()
-# # ---------------------------------------------------------------------------- #
-# # Define Autoecoder class
-# # Latent dim is the number of nodes in the bottleneck
-# latent_dim = config.N_BOTTLENECK
+# Prepare the data
+x_test= x_test.astype('float32') / 255.
+x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
+print("Fashion MNIST shape: ", x_test.shape)
 
-# class Autoencoder(Model):
-#       def __init__(self, latent_dim):
-#             super(Autoencoder, self).__init__()
-#             self.latent_dim = latent_dim   
-#             self.encoder = tf.keras.Sequential([
-#               layers.Flatten(),
-#               layers.Dense(latent_dim, activation='relu'),
-#               ])
-#             self.decoder = tf.keras.Sequential([
-#               layers.Dense(28*28, activation='sigmoid'),
-#               layers.Reshape((28, 28))
-#               ])
-#       def call(self, x):
-#             encoded = self.encoder(x)
-#             decoded = self.decoder(encoded)
-#             return decoded
+# ---------------------------------------------------------------------------- #
+# Compare the autoencoder on normal held out MNIST and fashion MNIST
 
-# autoencoder = Autoencoder(latent_dim)
-# # ---------------------------------------------------------------------------- #
-# autoencoder.compile(optimizer='rmsprop',
-#                     loss=losses.MeanSquaredError(),
-#                     metrics = ['acc'])
-# print(x_train.shape)
-# print(x_test.shape)
-# # ---------------------------------------------------------------------------- #
-# # Train the model using x_train as both the input and the target. 
-# # The encoder will learn to compress the dataset from 784 dimensions to the latent space, 
-# # and the decoder will learn to reconstruct the original images. .
+encoded_fashion = encoder.predict(x_test)
+decoded_fashion = autoencoder.predict(x_test)
 
-# autoencoder.fit(x_train, x_train,
-#                 epochs=config.EPOCHS,
-#                 shuffle=True,
-#                 validation_data=(x_test, x_test))
+encoded_number = encoder.predict(x_val)
+decoded_number = autoencoder.predict(x_val)
 
-# # ---------------------------------------------------------------------------- #
-# # Now that the model is trained, let's test it by encoding and decoding images from the test set.
+n = 10
+plt.figure(figsize=(20, 4))
+for i in range(n):
+  # display original
+  ax = plt.subplot(2, n, i + 1)
+  plt.imshow(x_val[i].reshape(28, 28))
+  plt.title("original number")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
 
-# encoded_imgs = autoencoder.encoder(x_test).numpy()
-# decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
-
-# # ---------------------------------------------------------------------------- #
-
-# n = 10
-# plt.figure(figsize=(20, 4))
-# for i in range(n):
-#   # display original
-#   ax = plt.subplot(2, n, i + 1)
-#   plt.imshow(x_test[i])
-#   plt.title("original")
-#   plt.gray()
-#   ax.get_xaxis().set_visible(False)
-#   ax.get_yaxis().set_visible(False)
-
-#   # display reconstruction
-#   ax = plt.subplot(2, n, i + 1 + n)
-#   plt.imshow(decoded_imgs[i])
-#   plt.title("reconstructed")
-#   plt.gray()
-#   ax.get_xaxis().set_visible(False)
-#   ax.get_yaxis().set_visible(False)
-# plt.savefig('./Plots/HW6.1_autoencoder_reconstruct.png')
+  # display reconstruction
+  ax = plt.subplot(2, n, i + 1 + n)
+  plt.imshow(decoded_number[i].reshape(28, 28))
+  plt.title("reconstructed number")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)      
+  
+plt.savefig('./Plots/HW6.1_reconstruct_number.png')
 # plt.show()
 
 
-# # ---------------------------------------------------------------------------- #
-# # Define plotting functions
+n = 10
+plt.figure(figsize=(20, 4))
+for i in range(n):
+  # display original
+  ax = plt.subplot(2, n, i + 1)
+  plt.imshow(x_test[i].reshape(28, 28))
+  plt.title("original fashion")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
 
-# def report(history,title='',I_PLOT=True):
-#     if(I_PLOT):
-#         #PLOT HISTORY
-#         epochs = range(1, len(history.history['loss']) + 1)
-#         plt.figure()
-#         plt.plot(epochs, history.history['loss'], 'ro', label='Training loss')
-#         plt.plot(epochs, history.history['val_loss'], 'b', label='Validation loss')
-#         plt.title(title)
-#         plt.legend()
-#         plt.savefig('./Plots/HW6.1_autoencoder_history_loss.png')
-#         plt.clf()
-        
-#         plt.plot(epochs, history.history['acc'], 'ro', label='Training acc')
-#         plt.plot(epochs, history.history['val_acc'], 'b', label='Validation acc')
-#         plt.title(title)
-#         plt.legend()
-#         plt.savefig('./Plots/HW6.1_autoencoder_history_acc.png')
-#         plt.close()
+  # display reconstruction
+  ax = plt.subplot(2, n, i + 1 + n)
+  plt.imshow(decoded_fashion[i].reshape(28, 28))
+  plt.title("reconstructed fashion")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
 
-# # Save the autoencoder plots
-# report(autoencoder.history)
+plt.savefig('./Plots/HW6.1_reconstruct_fashion.png')
+# plt.show()
 
-# # Save the autoencoder
-# # Because autoencoder is a custom subclass, need to add save_format
-# autoencoder.save('./Models/HW6.1_autoencoder', save_format='tf')
+# ---------------------------------------------------------------------------- #
+# Define the anomaly threshold
 
-# x_train_pred = autoencoder.predict(x_train)
-# print(x_train_pred.)
+x_train_pred = autoencoder.predict(x_train)
+print("\nReconstruction loss is the binary crossentropy from reconstruction the training images")
+reconstruction_loss = losses.binary_crossentropy(x_train, x_train_pred)
+
+mean_loss = np.mean(reconstruction_loss)
+print("Mean binary_crossentropy: ",mean_loss)
+std_loss = np.std(reconstruction_loss)
+print("Standard deviation: ", std_loss)
+threshold = mean_loss+3*std_loss
+print("Anomaly threshold: 3 std from the mean binary crossentropy: ", threshold)
+
+# ---------------------------------------------------------------------------- #
+# Find the anomaly rate for the normal MNIST validation
+train_reconstruction_loss = np.asarray(reconstruction_loss)
+train_anomalies = [i for i, loss in enumerate(train_reconstruction_loss) if loss>threshold]
+train_anomalies_percent = len(train_anomalies)/len(train_reconstruction_loss)*100
+
+print("\nTrain MNIST shape: ", x_train.shape)
+print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
+
+# ---------------------------------------------------------------------------- #
+# Find the anomaly rate for the normal MNIST validation
+x_val_pred = autoencoder.predict(x_val)
+number_loss = losses.binary_crossentropy(x_val, x_val_pred)
+number_loss = np.asarray(number_loss)
+number_anomalies = [i for i, loss in enumerate(number_loss) if loss>threshold]
+number_anomalies_percent = len(number_anomalies)/len(number_loss)*100
+
+print("\nValidation MNIST shape: ", x_val.shape)
+print("Validation MNIST anomaly detection rate: ", number_anomalies_percent, "%")
+
+
+# ---------------------------------------------------------------------------- #
+# Find the anomaly rate for the fashion MNIST set
+x_test_pred = autoencoder.predict(x_test)
+fashion_loss = losses.binary_crossentropy(x_test, x_test_pred)
+fashion_loss = np.asarray(fashion_loss)
+fashion_anomalies = [i for i, loss in enumerate(fashion_loss) if loss>threshold]
+fashion_anomalies_percent = len(fashion_anomalies)/len(fashion_loss)*100
+
+print("\nFashion MNIST test shape: ", x_test.shape)
+print("Fashion MNIST anomaly detection rate: ", fashion_anomalies_percent, "%")
+
+# ---------------------------------------------------------------------------- #
+# Plot of the cross entropies and anomaly threshold
+
+fig, ax = plt.subplots()
+ax.axhline(y=threshold, color='k', linestyle=':')
+ax.plot(range(len(fashion_loss)), fashion_loss, 'bo', alpha = 0.5, ms=1, label = "Fashion MNIST")
+ax.plot(range(len(number_loss)), number_loss, 'ro', alpha = 0.5,  ms=1, label = "MNIST")
+plt.title("Anomaly detection based on cross entropy")
+plt.xlabel("Index")
+plt.ylabel("Cross entropy between original and reconstructed image")
+plt.legend()
+plt.savefig("./Plots/HW6.1_cross_entropy_detection.png")
+# plt.show()
