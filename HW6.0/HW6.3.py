@@ -55,29 +55,24 @@ x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
 x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
 decoded = layers.Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
 
-
-
 autoencoder = tf.keras.Model(input_img, decoded)
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError(), metrics=['acc'])
 
 autoencoder.summary()
 # exit()
 # ---------------------------------------------------------------------------- #
-# Validation is done on MNIST data too
-(x_train, _), (x_val, _) = cifar10.load_data()
+(x_train, y_train), (x_val, y_val) = cifar10.load_data()
+# Remove pickup truck from CIFAR10
+
+print("\nRemoving pickup truck from CIFAR 10")
+
+x_train = x_train[y_train.flatten() != 9]
+x_val = x_val[y_val.flatten() != 9]
+
 
 # Normalize data
 x_train = x_train.reshape((x_train.shape[0],) + (32, 32, 3)).astype('float32') / 255.
 x_val = x_val.reshape((x_val.shape[0],) + (32, 32, 3)).astype('float32') / 255.
-
-
-
-# print(x_train.shape)
-# print(x_val.shape)
-# exit()
-
-# x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
-# x_val = np.reshape(x_val, (len(x_val), 28, 28, 1))
 
 print("CIFAR10 shape: ", x_train.shape)
 print("CIFAR10 test shape: ", x_val.shape)
@@ -123,41 +118,30 @@ report(history)
 autoencoder.save('./Models/HW6.3_autoencoder.hdf5')
 
 print("Finished training")
-# exit()
+
+
 # ---------------------------------------------------------------------------- #
-# Read in the CIFAR-100
+# Read in the CIFAR-100 data
 print("Reading in CIFAR100")
+print("Not removing pickup truck")
 (_, _), (x_test, y_test) = cifar100.load_data()
 # Remove pickup truck from CIFAR100
-print("\nRemoving pickup truck from CIFAR 100")
+# print("\nRemoving pickup truck from CIFAR 100")
 
-x_test = x_test[y_test.flatten() != 58]
+# x_test = x_test[y_test.flatten() != 58]
 
 # Prepare the data
 x_test = x_test.reshape((x_test.shape[0],) + (32, 32, 3)).astype('float32') / 255.
 
 print("\nCIFAR-100 shape: ", x_test.shape)
 
-# print(x_test[0])
-# print(x_test[0].shape)
 
-# print(x_val[0])
-# print(x_val[0].shape)
-
-# exit()
-# exit()
 
 # ---------------------------------------------------------------------------- #
-# Compare the autoencoder on normal held out MNIST and fashion MNIST
+# Prints out how the autoencoder does
 
-#encoded_fashion = encoder.predict(x_test)
 decoded_cifar100 = autoencoder.predict(x_test)
-
-#encoded_number = encoder.predict(x_val)
 decoded_cifar10 = autoencoder.predict(x_val)
-
-# print(decoded_cifar10[0])
-# print(decoded_cifar10[0].shape)
 
 n = 10
 plt.figure(figsize=(20, 4))
@@ -179,9 +163,7 @@ for i in range(n):
   ax.get_yaxis().set_visible(False)      
   
 plt.savefig('./Plots/HW6.3_reconstruct_CIFAR10.png')
-# plt.show()
 
-# exit()
 
 n = 10
 plt.figure(figsize=(20, 4))
@@ -210,7 +192,6 @@ plt.savefig('./Plots/HW6.3_reconstruct_cifar100.png')
 # Define the anomaly threshold
 
 x_train_pred = autoencoder.predict(x_train)
-
 
 mse = losses.MeanSquaredError()
 train_losses = []
@@ -260,6 +241,62 @@ test_anomalies_percent = len(test_anomalies)/len(test_losses)*100
 print("\nTest CIFAR100 shape: ", x_test.shape)
 print("Test CIFAR100 anomaly detection rate: ", test_anomalies_percent, "%")
 
+# ---------------------------------------------------------------------------- #
+# Read in the CIFAR-100 data
+print("Reading in CIFAR100 again")
+(x_test, y_test), (_, _) = cifar100.load_data()
+# indices = np.arange(x_test.shape[0])
+# np.random.shuffle(indices)
+
+# x_test = x_test[indices]
+# y_test = y_test[indices]
+
+
+# print(x_test.shape); exit()
+print("\nSplit into 2, remove pickup truck from 1 half and leave it in in the other half")
+x_test_with_truck = x_test[0:25000]; y_test_with_truck = y_test[0:25000]
+x_test_without_truck = x_test[25000:]; y_test_without_truck = y_test[25000:]
+
+
+# Remove pickup truck from CIFAR100
+print("\nRemoving pickup truck from CIFAR 100")
+
+x_test_without_truck = x_test_without_truck[y_test_without_truck.flatten() != 58]
+
+# Prepare the data
+x_test_with_truck = x_test_with_truck.reshape((x_test_with_truck.shape[0],) + (32, 32, 3)).astype('float32') / 255.
+x_test_without_truck = x_test_without_truck.reshape((x_test_without_truck.shape[0],) + (32, 32, 3)).astype('float32') / 255.
+
+
+# ---------------------------------------------------------------------------- #
+x_test_with_truck_pred = autoencoder.predict(x_test_with_truck)
+test_with_truck_losses =[]
+
+for i in range(len(x_test_without_truck)):
+      test_with_truck_loss = mse(x_test_with_truck[i], x_test_with_truck_pred[i]).numpy()
+      test_with_truck_losses.append(test_with_truck_loss)
+
+test_with_truck_anomalies = [i for i, loss in enumerate(test_with_truck_losses) if loss>threshold]
+test_with_truck_anomalies_percent = len(test_with_truck_anomalies)/len(test_with_truck_losses)*100
+
+print("\nWith truck shape : ", x_test_with_truck.shape)
+print("\nWith truck anomaly detection rate: ", test_with_truck_anomalies_percent, "%")
+
+
+
+# ---------------------------------------------------------------------------- #
+x_test_without_truck_pred = autoencoder.predict(x_test_without_truck)
+test_without_truck_losses =[]
+
+for i in range(len(x_test_without_truck)):
+      test_without_truck_loss = mse(x_test_without_truck[i], x_test_without_truck_pred[i]).numpy()
+      test_without_truck_losses.append(test_without_truck_loss)
+
+test_without_truck_anomalies = [i for i, loss in enumerate(test_without_truck_losses) if loss>threshold]
+test_without_truck_anomalies_percent = len(test_without_truck_anomalies)/len(test_without_truck_losses)*100
+
+print("\nWithout truck shape : ", x_test_without_truck.shape)
+print("\nWithout truck anomaly detection rate: ", test_without_truck_anomalies_percent, "%")
 
 
 exit()
