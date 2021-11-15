@@ -35,37 +35,49 @@ from sklearn.metrics import accuracy_score
 
 # ---------------------------------------------------------------------------- #
 
-n_bottleneck = 100
-epochs = 50
-batch_size = 10000
+epochs = 100
+batch_size = 1000
 # Functional API representation of Prof Hickman's deep model in MNIST-DAE
 # The code is borrowed from https://blog.keras.io/building-autoencoders-in-keras.html
 
 input_img = Input(shape=(28, 28, 1))
-
 x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-#x = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
 x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-#x = layers.MaxPooling2D((2, 2), padding='same')(x)
-encoded = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-# encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(x)
+encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
 
-# "decoded" is the loss reconstruction of the input
-x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
-#x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(encoded)
+x = layers.UpSampling2D((2, 2))(x)
 x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-#x = layers.UpSampling2D((2, 2))(x)
-x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
-#x = layers.UpSampling2D((2, 2))(x)
+x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(16, (3, 3), activation='relu')(x)
+x = layers.UpSampling2D((2, 2))(x)
+
 decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+# x = layers.Conv2D(14, (3, 3), activation='relu', padding='same')(input_img)
+# # x = layers.MaxPooling2D((2, 2), padding='same')(x)
+# # x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# #x = layers.MaxPooling2D((2, 2), padding='same')(x)
+# encoded = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# # encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
+
+# # "decoded" is the loss reconstruction of the input
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
+# #x = layers.UpSampling2D((2, 2))(x)
+# # x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# #x = layers.UpSampling2D((2, 2))(x)
+# x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+# #x = layers.UpSampling2D((2, 2))(x)
+# decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
 
 
 
 autoencoder = tf.keras.Model(input_img, decoded)
-autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError(), metrics=['acc'])
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
 
 autoencoder.summary()
-
 # ---------------------------------------------------------------------------- #
 # Validation is done on MNIST data too
 (x_train, _), (x_val, _) = mnist.load_data()
@@ -100,7 +112,7 @@ def report(history,title='',I_PLOT=True):
         plt.plot(epochs, history.history['val_loss'], 'b-', label='Validation loss')
         plt.title(title)
         plt.xlabel("Epochs")
-        plt.ylabel("Binary Crossentropy")
+        plt.ylabel("Loss")
         plt.legend()
         plt.savefig('./Plots/HW6.2_autoencoder_history_loss.png')
         plt.clf()
@@ -138,10 +150,7 @@ print("Fashion MNIST shape: ", x_test.shape)
 # ---------------------------------------------------------------------------- #
 # Compare the autoencoder on normal held out MNIST and fashion MNIST
 
-#encoded_fashion = encoder.predict(x_test)
 decoded_fashion = autoencoder.predict(x_test)
-
-#encoded_number = encoder.predict(x_val)
 decoded_number = autoencoder.predict(x_val)
 
 n = 10
@@ -150,7 +159,7 @@ for i in range(n):
   # display original
   ax = plt.subplot(2, n, i + 1)
   plt.imshow(x_val[i].reshape(28, 28, 1))
-  plt.title("original number")
+  plt.title("original")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
@@ -158,12 +167,12 @@ for i in range(n):
   # display reconstruction
   ax = plt.subplot(2, n, i + 1 + n)
   plt.imshow(decoded_number[i].reshape(28, 28,1))
-  plt.title("reconstructed number")
+  plt.title("reconstructed")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)      
   
-plt.savefig('./Plots/HW6.2_reconstruct_number.png')
+plt.savefig('./Plots/HW6.2_reconstruct_MNIST.png')
 # plt.show()
 
 
@@ -173,7 +182,7 @@ for i in range(n):
   # display original
   ax = plt.subplot(2, n, i + 1)
   plt.imshow(x_test[i].reshape(28, 28))
-  plt.title("original fashion")
+  plt.title("original")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
@@ -181,12 +190,12 @@ for i in range(n):
   # display reconstruction
   ax = plt.subplot(2, n, i + 1 + n)
   plt.imshow(decoded_fashion[i].reshape(28, 28))
-  plt.title("reconstructed fashion")
+  plt.title("reconstructed")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
 
-plt.savefig('./Plots/HW6.2_reconstruct_fashion.png')
+plt.savefig('./Plots/HW6.2_reconstruct_fashion_MNIST.png')
 # plt.show()
 
 
@@ -203,11 +212,11 @@ for i in range(len(x_train)):
   train_losses.append(train_loss)
 
 mean_loss = np.mean(train_losses)
-print("Mean binary_crossentropy: ",mean_loss)
+print("Mean of MSE: ",mean_loss)
 std_loss = np.std(train_losses)
 print("Standard deviation: ", std_loss)
 threshold = mean_loss+3*std_loss
-print("Anomaly threshold: 3 std from the mean binary crossentropy: ", threshold)
+print("Anomaly threshold: 3 std from the mean MSE: ", threshold)
 max_loss = np.max(train_loss)
 print("\nMax loss: ", max_loss)
 

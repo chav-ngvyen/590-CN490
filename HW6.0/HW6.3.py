@@ -35,28 +35,35 @@ from sklearn.metrics import accuracy_score
 
 # ---------------------------------------------------------------------------- #
 
-n_bottleneck = 100
-epochs = 50
-batch_size = 10000
+epochs = 100
+batch_size = 1000
 
 # This came from TF's tutorial
 # https://www.tensorflow.org/tutorials/images/cnn
 
 
 input_img = Input(shape=(32, 32, 3))
-
-x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-encoded = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-
-# "decoded" is the loss reconstruction of the input
-x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
-x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+x = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(input_img)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
 x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
+
+x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
+x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(32, (3, 3), activation='relu',padding='same')(x)
+x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(64, (3, 3), activation='relu',padding='same')(x)
+x = layers.UpSampling2D((2, 2))(x)
 decoded = layers.Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
 
 autoencoder = tf.keras.Model(input_img, decoded)
-autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError(), metrics=['acc'])
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
 
 autoencoder.summary()
 # exit()
@@ -64,10 +71,10 @@ autoencoder.summary()
 (x_train, y_train), (x_val, y_val) = cifar10.load_data()
 # Remove pickup truck from CIFAR10
 
-print("\nRemoving pickup truck from CIFAR 10")
+# print("\nRemoving pickup truck from CIFAR 10")
 
-x_train = x_train[y_train.flatten() != 9]
-x_val = x_val[y_val.flatten() != 9]
+# x_train = x_train[y_train.flatten() != 9]
+# x_val = x_val[y_val.flatten() != 9]
 
 
 # Normalize data
@@ -98,7 +105,7 @@ def report(history,title='',I_PLOT=True):
         plt.plot(epochs, history.history['val_loss'], 'b-', label='Validation loss')
         plt.title(title)
         plt.xlabel("Epochs")
-        plt.ylabel("Binary Crossentropy")
+        plt.ylabel("Loss")
         plt.legend()
         plt.savefig('./Plots/HW6.3_autoencoder_history_loss.png')
         plt.clf()

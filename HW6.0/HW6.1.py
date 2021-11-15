@@ -32,7 +32,7 @@ from tensorflow.keras.datasets import mnist, fashion_mnist
 
 # ---------------------------------------------------------------------------- #
 
-n_bottleneck = 100
+n_bottleneck = 32
 epochs = 100
 batch_size = 1000
 # Functional API representation of Prof Hickman's deep model in MNIST-DAE
@@ -41,13 +41,15 @@ batch_size = 1000
 # This is our input image
 input_img = Input(shape=(28*28,))
 # "encoded" is the encoded representation of the input
-encoded = layers.Dense(128, activation='relu')(input_img)
+encoded = layers.Dense(256, activation='relu')(input_img)
+encoded = layers.Dense(128, activation='relu')(encoded)
 encoded = layers.Dense(64, activation='relu')(encoded)
 encoded = layers.Dense(n_bottleneck, activation='relu')(encoded)
 
 # "decoded" is the lossy reconstruction of the input
 decoded = layers.Dense(64, activation='relu')(encoded)
 decoded = layers.Dense(128, activation='relu')(decoded)
+decoded = layers.Dense(256, activation='relu')(decoded)
 decoded = layers.Dense(28*28, activation='sigmoid')(decoded)
 
 # This model maps an input to its reconstruction
@@ -56,8 +58,10 @@ autoencoder = Model(input_img, decoded)
 encoder = Model(input_img, encoded)
 
 # ---------------------------------------------------------------------------- #
+mse = losses.MeanSquaredError()
+
 autoencoder.compile(optimizer='adam',
-                    loss='binary_crossentropy',
+                    loss= 'binary_crossentropy',
                     metrics = ['acc'])
 
 print("\nAutoencoder summary:")
@@ -92,7 +96,7 @@ def report(history,title='',I_PLOT=True):
         plt.plot(epochs, history.history['val_loss'], 'b-', label='Validation loss')
         plt.title(title)
         plt.xlabel("Epochs")
-        plt.ylabel("Binary Crossentropy")
+        plt.ylabel("Loss")
         plt.legend()
         plt.savefig('./Plots/HW6.1_autoencoder_history_loss.png')
         plt.clf()
@@ -140,7 +144,7 @@ for i in range(n):
   # display original
   ax = plt.subplot(2, n, i + 1)
   plt.imshow(x_val[i].reshape(28, 28))
-  plt.title("original number")
+  plt.title("original")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
@@ -148,12 +152,12 @@ for i in range(n):
   # display reconstruction
   ax = plt.subplot(2, n, i + 1 + n)
   plt.imshow(decoded_number[i].reshape(28, 28))
-  plt.title("reconstructed number")
+  plt.title("reconstructed")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)      
   
-plt.savefig('./Plots/HW6.1_reconstruct_number.png')
+plt.savefig('./Plots/HW6.1_reconstruct_MNIST.png')
 # plt.show()
 
 
@@ -163,7 +167,7 @@ for i in range(n):
   # display original
   ax = plt.subplot(2, n, i + 1)
   plt.imshow(x_test[i].reshape(28, 28))
-  plt.title("original fashion")
+  plt.title("original")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
@@ -171,70 +175,80 @@ for i in range(n):
   # display reconstruction
   ax = plt.subplot(2, n, i + 1 + n)
   plt.imshow(decoded_fashion[i].reshape(28, 28))
-  plt.title("reconstructed fashion")
+  plt.title("reconstructed")
   plt.gray()
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
 
-plt.savefig('./Plots/HW6.1_reconstruct_fashion.png')
+plt.savefig('./Plots/HW6.1_reconstruct_fashion_MNIST.png')
 # plt.show()
 
 # ---------------------------------------------------------------------------- #
 # Define the anomaly threshold
 
 x_train_pred = autoencoder.predict(x_train)
-print("\nReconstruction loss is the binary crossentropy from reconstruction the training images")
-reconstruction_loss = losses.binary_crossentropy(x_train, x_train_pred)
 
-mean_loss = np.mean(reconstruction_loss)
-print("Mean binary_crossentropy: ",mean_loss)
-std_loss = np.std(reconstruction_loss)
+
+train_losses = []
+for i in range(len(x_train)):
+  train_loss = mse(x_train[i], x_train_pred[i]).numpy()
+  train_losses.append(train_loss)
+
+mean_loss = np.mean(train_losses)
+print("MSE: ",mean_loss)
+std_loss = np.std(train_losses)
 print("Standard deviation: ", std_loss)
 threshold = mean_loss+3*std_loss
-print("Anomaly threshold: 3 std from the mean binary crossentropy: ", threshold)
+print("Anomaly threshold: 3 std from the MSE: ", threshold)
+max_loss = np.max(train_loss)
+print("\nMax loss: ", max_loss)
 
-# ---------------------------------------------------------------------------- #
-# Find the anomaly rate for the normal MNIST validation
-train_reconstruction_loss = np.asarray(reconstruction_loss)
-train_anomalies = [i for i, loss in enumerate(train_reconstruction_loss) if loss>threshold]
-train_anomalies_percent = len(train_anomalies)/len(train_reconstruction_loss)*100
+train_anomalies = [i for i, loss in enumerate(train_losses) if loss>threshold]
+train_anomalies_percent = len(train_anomalies)/len(train_losses)*100
 
 print("\nTrain MNIST shape: ", x_train.shape)
 print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
 
+
 # ---------------------------------------------------------------------------- #
-# Find the anomaly rate for the normal MNIST validation
 x_val_pred = autoencoder.predict(x_val)
-number_loss = losses.binary_crossentropy(x_val, x_val_pred)
-number_loss = np.asarray(number_loss)
-number_anomalies = [i for i, loss in enumerate(number_loss) if loss>threshold]
-number_anomalies_percent = len(number_anomalies)/len(number_loss)*100
+validation_losses =[]
+for i in range(len(x_val)):
+      val_loss = mse(x_val[i], x_val_pred[i]).numpy()
+      validation_losses.append(val_loss)
+
+val_anomalies = [i for i, loss in enumerate(validation_losses) if loss>threshold]
+val_anomalies_percent = len(val_anomalies)/len(validation_losses)*100
 
 print("\nValidation MNIST shape: ", x_val.shape)
-print("Validation MNIST anomaly detection rate: ", number_anomalies_percent, "%")
-
+print("Validation MNIST anomaly detection rate: ", val_anomalies_percent, "%")
 
 # ---------------------------------------------------------------------------- #
-# Find the anomaly rate for the fashion MNIST set
 x_test_pred = autoencoder.predict(x_test)
-fashion_loss = losses.binary_crossentropy(x_test, x_test_pred)
-fashion_loss = np.asarray(fashion_loss)
-fashion_anomalies = [i for i, loss in enumerate(fashion_loss) if loss>threshold]
-fashion_anomalies_percent = len(fashion_anomalies)/len(fashion_loss)*100
+test_losses =[]
+for i in range(len(x_test)):
+      test_loss = mse(x_test[i], x_test_pred[i]).numpy()
+      test_losses.append(test_loss)
 
-print("\nFashion MNIST test shape: ", x_test.shape)
-print("Fashion MNIST anomaly detection rate: ", fashion_anomalies_percent, "%")
+test_anomalies = [i for i, loss in enumerate(test_losses) if loss>threshold]
+test_anomalies_percent = len(test_anomalies)/len(test_losses)*100
+
+print("\nFashion MNIST shape: ", x_test.shape)
+print("Fashion MNIST anomaly detection rate: ", test_anomalies_percent, "%")
+
+
+
 
 # ---------------------------------------------------------------------------- #
 # Plot of the cross entropies and anomaly threshold
 
 fig, ax = plt.subplots()
-ax.axhline(y=threshold, color='k', linestyle=':')
-ax.plot(range(len(fashion_loss)), fashion_loss, 'bo', alpha = 0.5, ms=1, label = "Fashion MNIST")
-ax.plot(range(len(number_loss)), number_loss, 'ro', alpha = 0.5,  ms=1, label = "MNIST")
-plt.title("Anomaly detection based on cross entropy")
+ax.axhline(y=threshold, color='r', linestyle=':')
+ax.plot(range(len(test_losses)), test_losses, color='lightgray',marker='.', alpha = 0.5, ms=1, label = "Fashion MNIST")
+ax.plot(range(len(validation_losses)), validation_losses, color='k',marker='o', alpha = 0.75,  ms=1, label = "MNIST")
+plt.title("Anomaly detection based on MSE")
 plt.xlabel("Index")
-plt.ylabel("Cross entropy between original and reconstructed image")
+plt.ylabel("MSE between original and reconstructed image")
 plt.legend()
-plt.savefig("./Plots/HW6.1_cross_entropy_detection.png")
+plt.savefig("./Plots/HW6.1_anomaly_detection.png")
 # plt.show()
