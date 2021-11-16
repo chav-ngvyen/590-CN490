@@ -31,10 +31,18 @@ from tensorflow.keras.datasets import mnist, fashion_mnist
 # WEEK10 codes from Prof Hickman
 
 # ---------------------------------------------------------------------------- #
-
 n_bottleneck = 32
+
 epochs = 100
 batch_size = 1000
+n_deviation = 3 
+n_percentile = 98
+
+# anomaly_threshold = 'max_train_loss'
+anomaly_threshold = 'n_percentile'; #pick n_percentile above
+# anomaly_threshold = 'n_standard_deviations'; #pick n_deviation above
+
+# ---------------------------------------------------------------------------- #
 # Functional API representation of Prof Hickman's deep model in MNIST-DAE
 # The code is borrowed from https://blog.keras.io/building-autoencoders-in-keras.html
 
@@ -185,27 +193,43 @@ plt.savefig('./Plots/HW6.1_reconstruct_fashion_MNIST.png')
 
 # ---------------------------------------------------------------------------- #
 # Define the anomaly threshold
-
 x_train_pred = autoencoder.predict(x_train)
 
-
+mse = losses.MeanSquaredError()
+bce = losses.BinaryCrossentropy()
 train_losses = []
 for i in range(len(x_train)):
-  train_loss = mse(x_train[i], x_train_pred[i]).numpy()
+  train_loss = bce(x_train[i], x_train_pred[i]).numpy()
   train_losses.append(train_loss)
+print("Variance in train losses:", np.var(train_losses))
 
+# ---------------------------------------------------------------------------- #
+# Calculate threshold
 mean_loss = np.mean(train_losses)
-print("MSE: ",mean_loss)
+print("\nMean loss: ",mean_loss)
 std_loss = np.std(train_losses)
-print("Standard deviation: ", std_loss)
-threshold = mean_loss+3*std_loss
-print("Anomaly threshold: 3 std from the MSE: ", threshold)
-max_loss = np.max(train_loss)
-print("\nMax loss: ", max_loss)
+print("\nStandard deviation: ", std_loss)
 
-train_anomalies = [i for i, loss in enumerate(train_losses) if loss>threshold]
+print("\nAnomaly detection options:")
+threshold_deviation = mean_loss+n_deviation*std_loss
+print("\n",n_deviation, "standard deviations from the mean training loss: ", threshold_deviation)
+max_loss = np.max(train_losses)
+print("\nMax training loss: ", max_loss)
+percentile_loss = np.percentile(train_losses,n_percentile)
+print("\n", n_percentile, "th percentile of training loss: ", percentile_loss)
+
+if anomaly_threshold == 'max_train_loss':
+      threshold = max_loss
+if anomaly_threshold == 'n_percentile':
+      threshold = percentile_loss
+if anomaly_threshold == 'n_standard_deviations':
+      threshold = threshold_deviation     
+
+
+train_anomalies = [loss for loss in train_losses if loss>=threshold]
 train_anomalies_percent = len(train_anomalies)/len(train_losses)*100
 
+print("\nUsing", anomaly_threshold, " method for anomaly detection")
 print("\nTrain MNIST shape: ", x_train.shape)
 print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
 
@@ -214,10 +238,10 @@ print("Train MNIST anomaly detection rate: ", train_anomalies_percent, "%")
 x_val_pred = autoencoder.predict(x_val)
 validation_losses =[]
 for i in range(len(x_val)):
-      val_loss = mse(x_val[i], x_val_pred[i]).numpy()
+      val_loss = bce(x_val[i], x_val_pred[i]).numpy()
       validation_losses.append(val_loss)
 
-val_anomalies = [i for i, loss in enumerate(validation_losses) if loss>threshold]
+val_anomalies = [loss for loss in validation_losses if loss>=threshold]
 val_anomalies_percent = len(val_anomalies)/len(validation_losses)*100
 
 print("\nValidation MNIST shape: ", x_val.shape)
@@ -227,10 +251,10 @@ print("Validation MNIST anomaly detection rate: ", val_anomalies_percent, "%")
 x_test_pred = autoencoder.predict(x_test)
 test_losses =[]
 for i in range(len(x_test)):
-      test_loss = mse(x_test[i], x_test_pred[i]).numpy()
+      test_loss = bce(x_test[i], x_test_pred[i]).numpy()
       test_losses.append(test_loss)
 
-test_anomalies = [i for i, loss in enumerate(test_losses) if loss>threshold]
+test_anomalies = [loss for loss in test_losses if loss>=threshold]
 test_anomalies_percent = len(test_anomalies)/len(test_losses)*100
 
 print("\nFashion MNIST shape: ", x_test.shape)
