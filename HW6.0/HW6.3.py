@@ -35,7 +35,7 @@ from sklearn.metrics import accuracy_score
 
 # ---------------------------------------------------------------------------- #
 
-epochs = 100
+epochs = 300
 batch_size = 1000
 n_deviation = 3
 n_percentile = 98
@@ -78,6 +78,9 @@ x = layers.Conv2D(filters = 16, kernel_size = (3, 3), activation='relu', padding
 x = layers.UpSampling2D((2, 2))(x)
 
 decoded = layers.Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
+
+
+
 
 autoencoder = tf.keras.Model(input_img, decoded)
 autoencoder.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
